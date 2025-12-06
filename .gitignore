@@ -1,0 +1,20 @@
+# Operations System and IDE specific files
+.DS_Store
+.env
+.vscode/
+.idea/
+*.suo
+*.ntvs
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Root level node_modules (if any)
+node_modules/
