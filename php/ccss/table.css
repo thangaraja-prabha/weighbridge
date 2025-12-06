@@ -1,0 +1,27 @@
+				table {
+				border-collapse: collapse;
+				}
+
+				table{
+				 width:0 auto;
+				 margin:0 auto;
+				}
+
+				td{
+				border: 1px solid #e2e2e2;
+				padding: 10px; 
+				word-wrap: break-word;
+				}
+
+				th{
+				border: 1px solid #e2e2e2;
+				padding: 10px; 
+				word-wrap: break-word;
+				}
+
+				tr{
+				border: 1px solid #e2e2e2;
+				padding: 10px; 
+				word-wrap: break-word;
+
+				}

@@ -1,0 +1,14 @@
+[10-Apr-2022 17:47:10 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[10-Apr-2022 17:50:47 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[10-Apr-2022 17:51:37 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 04:28:10 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 04:29:04 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 04:59:31 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 05:17:04 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 05:18:08 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 05:18:19 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 05:18:21 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 06:10:07 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 09:00:30 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 09:23:29 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
+[12-Apr-2022 09:37:50 UTC] PHP Notice:  session_start(): A session had already been started - ignoring in /home/xzultpb75wjq/public_html/auth.php on line 7
