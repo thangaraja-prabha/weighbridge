@@ -8,6 +8,7 @@ import masterRoutes from './routes/master';
 import userRoutes from './routes/users';
 import reportRoutes from './routes/reports';
 import weighmentRoutes from './routes/weighment';
+import kycRoutes from './routes/kyc';
 import { testConnection } from './db';
 
 // Load environment variables
@@ -46,14 +47,15 @@ app.use('/api/master', masterRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/weighment', weighmentRoutes);
+app.use('/api/kyc', kycRoutes);
 
 // Serve index.html for any other GET request (SPA fallback)
 app.get('/{*splat}', (req: Request, res: Response) => {
-  res.sendFile(path.join(buildPath, 'index.html'), (err) => {
-    if (err) {
-      res.status(500).send('Error loading the application');
-    }
-  });
+    res.sendFile(path.join(buildPath, 'index.html'), (err) => {
+        if (err) {
+            res.status(500).send('Error loading the application');
+        }
+    });
 });
 
 // Start server

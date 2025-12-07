@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { weighmentApi } from '../api/weighment';
 
-const WeighOut: React.FC = () => {
+interface WeighOutProps {
+    type?: 'internal' | 'external';
+}
+
+const WeighOut: React.FC<WeighOutProps> = ({ type = 'internal' }) => {
     const [pendingList, setPendingList] = useState<any[]>([]);
     const [selectedRecord, setSelectedRecord] = useState<any>(null);
     const [wt2, setWt2] = useState('');
@@ -15,8 +19,10 @@ const WeighOut: React.FC = () => {
 
     const loadPending = async () => {
         try {
+            // Filter pending list by weighment type if needed
             const list = await weighmentApi.getPending();
-            setPendingList(list);
+            const filteredList = list?.data?.filter((item: any) => item.type === type) || [];
+            setPendingList(filteredList);
         } catch (err) {
             console.error(err);
         }

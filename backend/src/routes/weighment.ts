@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { wlog } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
+import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 
 const router = Router();
 router.use(authMiddleware);
@@ -38,8 +39,21 @@ router.post('/first', async (req: Request, res: Response) => {
 // Get Pending Weighments (W1)
 router.get('/pending', async (req: Request, res: Response) => {
     try {
-        const result = await db.select().from(wlog).where(eq(wlog.stat, 'W1')).orderBy(desc(wlog.id));
-        res.json(result);
+        const { page, limit, offset } = getPaginationParams(req);
+
+        // Count total
+        const countResult = await db.select({ count: sql`count(*)` }).from(wlog).where(eq(wlog.stat, 'W1'));
+        // @ts-ignore
+        const total = Number(countResult[0].count);
+
+        const result = await db.select()
+            .from(wlog)
+            .where(eq(wlog.stat, 'W1'))
+            .orderBy(desc(wlog.id))
+            .limit(limit)
+            .offset(offset);
+
+        res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

@@ -15,8 +15,8 @@ export const weighmentApi = {
         return response.json();
     },
 
-    getPending: async () => {
-        const response = await fetch(`${API_URL}/weighment/pending`, { headers: getHeaders() });
+    getPending: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/weighment/pending?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
 

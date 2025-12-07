@@ -85,7 +85,7 @@ const Reports: React.FC<ReportsProps> = ({ defaultGroupBy = 'stat', defaultView 
             // For now, list view uses Date Range + Fixed Filter.
 
             const res = await reportsApi.getList(filters);
-            setListData(res);
+            setListData(res?.data || []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -118,12 +118,12 @@ const Reports: React.FC<ReportsProps> = ({ defaultGroupBy = 'stat', defaultView 
             // I'll use client side filtering here for consistency with previous implementation.
 
             const list = await reportsApi.getList(filters);
+            let filteredList = list?.data || [];
 
-            let filteredList = list;
-            if (groupBy === 'nop') filteredList = list.filter((i: any) => i.nop === groupKey);
-            if (groupBy === 'item_description1') filteredList = list.filter((i: any) => i.item_description1 === groupKey);
-            if (groupBy === 'stype') filteredList = list.filter((i: any) => i.stype === groupKey);
-            if (groupBy === 'username') filteredList = list.filter((i: any) => i.username === groupKey);
+            if (groupBy === 'nop') filteredList = filteredList.filter((i: any) => i.nop === groupKey);
+            if (groupBy === 'item_description1') filteredList = filteredList.filter((i: any) => i.item_description1 === groupKey);
+            if (groupBy === 'stype') filteredList = filteredList.filter((i: any) => i.stype === groupKey);
+            if (groupBy === 'username') filteredList = filteredList.filter((i: any) => i.username === groupKey);
 
             setListData(filteredList);
             setListLoading(false); // Modal uses listData

@@ -1,4 +1,10 @@
-import { mysqlTable, int, varchar, date, datetime } from 'drizzle-orm/mysql-core';
+import { mysqlTable, int, varchar, date, datetime, text, json, customType } from 'drizzle-orm/mysql-core';
+
+const longtext = customType<{ data: string }>({
+    dataType() {
+        return "longtext";
+    },
+});
 
 export const users = mysqlTable('users', {
     id: int('id').primaryKey().autoincrement(),
@@ -119,3 +125,47 @@ export const nopt = mysqlTable('nopt', {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export const kyc_records = mysqlTable('kyc_records', {
+    id: int('id').primaryKey().autoincrement(),
+    AppName: varchar('AppName', { length: 100 }),
+    AppVersion: varchar('AppVersion', { length: 50 }),
+    ConfigVersion: varchar('ConfigVersion', { length: 50 }),
+    CountryName: varchar('CountryName', { length: 100 }),
+    StateName: varchar('StateName', { length: 100 }),
+    CityName: varchar('CityName', { length: 100 }),
+    BrandName: varchar('BrandName', { length: 100 }),
+    ShowroomName: varchar('ShowroomName', { length: 100 }),
+    WorkstationName: varchar('WorkstationName', { length: 100 }),
+    SubUserCategory1: varchar('SubUserCategory1', { length: 100 }),
+    SubUserCategory2: varchar('SubUserCategory2', { length: 100 }),
+    PrimaryUserType: int('PrimaryUserType'),
+    PrimaryUserName: varchar('PrimaryUserName', { length: 100 }),
+    PrimaryMobileNumber: varchar('PrimaryMobileNumber', { length: 20 }), // Using varchar for flexibility
+    PrimaryEmail: varchar('PrimaryEmail', { length: 150 }),
+    KYC_punch_mobile: varchar('KYC_punch_mobile', { length: 20 }),
+    KF_name: varchar('KF_name', { length: 150 }),
+    KF_aadhar: varchar('KF_aadhar', { length: 20 }),
+    KF_pan: varchar('KF_pan', { length: 20 }),
+    KF_incomesource: varchar('KF_incomesource', { length: 100 }),
+    KF_monthlyIncome: int('KF_monthlyIncome'),
+    KF_landmark: varchar('KF_landmark', { length: 255 }),
+    KF_houseType: varchar('KF_houseType', { length: 50 }),
+    KF_postalcode: int('KF_postalcode'),
+    KF_address: varchar('KF_address', { length: 500 }),
+    KF_Latitude: varchar('KF_Latitude', { length: 30 }), // Storing as string for precision safety or use decimal
+    KF_Longitude: varchar('KF_Longitude', { length: 30 }),
+    KF_house_photo1: longtext('KF_house_photo1'), // Requires LONGTEXT
+    KF_house_photo2: longtext('KF_house_photo2'),
+    KF_maritalstatus: varchar('KF_maritalstatus', { length: 50 }),
+    KF_mode: varchar('KF_mode', { length: 20 }),
+    Items: json('Items'), // Storing list as JSON
+    Order_reverify: varchar('Order_reverify', { length: 10 }),
+    Prev_Order_Id: int('Prev_Order_Id'),
+    Remarks: varchar('Remarks', { length: 1000 }),
+    trn_date: datetime('trn_date'),
+});
+
+export type KycRecord = typeof kyc_records.$inferSelect;
+export type NewKycRecord = typeof kyc_records.$inferInsert;
+

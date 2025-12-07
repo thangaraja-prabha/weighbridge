@@ -205,12 +205,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {role === 'Admin' && (
                             <>
                                 <MenuItem label="INT. WEIGHMENT" isDropdown icon={Icons.WeighIn}>
-                                    <SubMenuItem to="/weighin" label="FIRST WEIGHMENT" />
-                                    <SubMenuItem to="/weighout" label="SECOND WEIGHMENT" />
+                                    <SubMenuItem to="/int/weighin" label="FIRST WEIGHMENT" />
+                                    <SubMenuItem to="/int/weighout" label="SECOND WEIGHMENT" />
                                 </MenuItem>
                                 <MenuItem label="EXT. WEIGHMENT" isDropdown icon={Icons.WeighOut}>
-                                    <SubMenuItem to="/weighin" label="FIRST WEIGHMENT" />
-                                    <SubMenuItem to="/weighout" label="SECOND WEIGHMENT" />
+                                    <SubMenuItem to="/ext/weighin" label="FIRST WEIGHMENT" />
+                                    <SubMenuItem to="/ext/weighout" label="SECOND WEIGHMENT" />
                                     <SubMenuItem to="/sweigh" label="SINGLE WEIGHMENT" />
                                 </MenuItem>
                                 <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>

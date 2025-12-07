@@ -3,6 +3,7 @@ import { db } from '../db';
 import { mlog } from '../db/schema';
 import { sql, and } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
+import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 
 const router = Router();
 
@@ -58,11 +59,9 @@ router.get('/maintenance', async (req: Request, res: Response) => {
 // List endpoint for drill-down or detailed search
 router.get('/list', async (req: Request, res: Response) => {
     try {
-        // Query params: stdate, eddate (YYYY-MM-DD format for query convenience? Frontend should send ISO ranges or match DB format)
-        // Frontend date picker gives YYYY-MM-DD. DB has DD-MM-YYYY.
-        // We'll accept YYYY-MM-DD from frontend and convert in SQL.
-
-        const { stdate, eddate, stat, dept } = req.query;
+        const { stdate, eddate, stat, dept, page: p, limit: l } = req.query;
+        // Use utility but pass limit if provided differently or just use req
+        const { page, limit, offset } = getPaginationParams(req);
 
         let conditions = [];
 
@@ -79,13 +78,28 @@ router.get('/list', async (req: Request, res: Response) => {
             conditions.push(sql`${mlog.dept} = ${dept}`);
         }
 
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+        // Count
+        const countQuery = db.select({ count: sql`count(*)` }).from(mlog);
+        if (whereClause) countQuery.where(whereClause);
+
+        const countResult = await countQuery;
+        // @ts-ignore
+        const total = Number(countResult[0].count);
+
+        // Data
         const query = db.select().from(mlog);
-        if (conditions.length > 0) {
-            query.where(and(...conditions));
+        if (whereClause) {
+            query.where(whereClause);
         }
 
-        const result = await query.orderBy(sql`STR_TO_DATE(${mlog.stdate}, '%d-%m-%Y') DESC`);
-        res.json(result);
+        const result = await query
+            .orderBy(sql`STR_TO_DATE(${mlog.stdate}, '%d-%m-%Y') DESC`)
+            .limit(limit)
+            .offset(offset);
+
+        res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

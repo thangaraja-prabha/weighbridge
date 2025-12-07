@@ -7,8 +7,8 @@ const getHeaders = () => ({
 
 export const masterApi = {
     // Departments
-    getDepts: async () => {
-        const response = await fetch(`${API_URL}/master/dept`, { headers: getHeaders() });
+    getDepts: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/dept?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createDept: async (dept: string) => {
@@ -21,8 +21,8 @@ export const masterApi = {
     },
 
     // Shifts
-    getShifts: async () => {
-        const response = await fetch(`${API_URL}/master/shifts`, { headers: getHeaders() });
+    getShifts: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/shifts?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createShift: async (shift: string, stshift: string, edshift: string) => {
@@ -35,8 +35,8 @@ export const masterApi = {
     },
 
     // NOP
-    getNops: async () => {
-        const response = await fetch(`${API_URL}/master/nop`, { headers: getHeaders() });
+    getNops: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/nop?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createNop: async (nop: string) => {
@@ -49,8 +49,8 @@ export const masterApi = {
     },
 
     // Machines
-    getMachines: async () => {
-        const response = await fetch(`${API_URL}/master/mdetail`, { headers: getHeaders() });
+    getMachines: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/mdetail?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createMachine: async (mname: string) => {
@@ -63,8 +63,8 @@ export const masterApi = {
     },
 
     // Vehicles
-    getVehicles: async () => {
-        const response = await fetch(`${API_URL}/master/vehicle`, { headers: getHeaders() });
+    getVehicles: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/vehicle?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createVehicle: async (vnum: string) => {
@@ -77,8 +77,8 @@ export const masterApi = {
     },
 
     // Transporters
-    getTransporters: async () => {
-        const response = await fetch(`${API_URL}/master/transporter`, { headers: getHeaders() });
+    getTransporters: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/transporter?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createTransporter: async (tname: string) => {
@@ -91,8 +91,8 @@ export const masterApi = {
     },
 
     // Suppliers
-    getSuppliers: async () => {
-        const response = await fetch(`${API_URL}/master/supplier`, { headers: getHeaders() });
+    getSuppliers: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/supplier?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createSupplier: async (sname: string) => {
@@ -105,8 +105,8 @@ export const masterApi = {
     },
 
     // Customers
-    getCustomers: async () => {
-        const response = await fetch(`${API_URL}/master/customer`, { headers: getHeaders() });
+    getCustomers: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/customer?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     },
     createCustomer: async (cname: string) => {
@@ -127,9 +127,9 @@ export const masterApi = {
         return response.json();
     },
 
-    // Users (from previous steps)
-    getUsers: async (filter?: string) => {
-        const response = await fetch(`${API_URL}/users?filter=${filter || ''}`, { headers: getHeaders() });
+    // Users
+    getUsers: async (filter = '', page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/users?filter=${filter}&page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
     }
 };

@@ -238,12 +238,44 @@ function App() {
                 />
 
                 {/* Weighment Operations */}
+                {/* Internal Weighment */}
                 <Route
-                    path="/weighin"
+                    path="/int/weighin"
                     element={
                         <ProtectedRoute>
                             <Layout>
-                                <WeighIn />
+                                <WeighIn type="internal" />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/int/weighout"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <WeighOut type="internal" />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                {/* External Weighment */}
+                <Route
+                    path="/ext/weighin"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <WeighIn type="external" />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/ext/weighout"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <WeighOut type="external" />
                             </Layout>
                         </ProtectedRoute>
                     }

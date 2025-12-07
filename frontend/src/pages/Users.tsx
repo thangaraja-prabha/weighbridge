@@ -27,7 +27,7 @@ const Users: React.FC = () => {
         setLoading(true);
         try {
             const res = await masterApi.getUsers(search);
-            setUsers(res);
+            setUsers(res?.data || []);
         } catch (err) {
             console.error(err);
         } finally {

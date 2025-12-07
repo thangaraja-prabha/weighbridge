@@ -3,7 +3,11 @@ import { masterApi } from '../api/master';
 import { weighmentApi } from '../api/weighment';
 import { useNavigate } from 'react-router-dom';
 
-const WeighIn: React.FC = () => {
+interface WeighInProps {
+    type?: 'internal' | 'external';
+}
+
+const WeighIn: React.FC<WeighInProps> = ({ type = 'internal' }) => {
     const navigate = useNavigate();
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [machines, setMachines] = useState<any[]>([]);
@@ -12,6 +16,7 @@ const WeighIn: React.FC = () => {
     const [customers, setCustomers] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
+        type: type,
         vnum: '',
         mname: '',
         tname: '',
@@ -58,7 +63,16 @@ const WeighIn: React.FC = () => {
             const res = await weighmentApi.createFirst(formData);
             if (res.success) {
                 setMessage('First Weighment Saved successfully!');
-                setFormData({ vnum: '', mname: '', tname: '', sname: '', cname: '', remarks: '', wt1: '' });
+                setFormData({ 
+                    type: type,
+                    vnum: '', 
+                    mname: '', 
+                    tname: '', 
+                    sname: '', 
+                    cname: '', 
+                    remarks: '', 
+                    wt1: '' 
+                });
             } else {
                 setMessage('Error: ' + res.error);
             }

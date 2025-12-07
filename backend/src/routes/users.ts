@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
-import { not, eq, like, or, and } from 'drizzle-orm';
+import { not, eq, like, or, and, sql } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
+import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 
 const router = Router();
 
@@ -14,20 +15,22 @@ router.get('/', async (req: Request, res: Response) => {
         const search = req.query.search as string;
 
         // Base condition: Not Admins
-        // Note: In PHP it was "NOT type='Admins' AND NOT type='Administrator'"
-        // Drizzle specific filter construction
-
-        let whereClause = and(
+        const baseCondition = and(
             not(eq(users.type, 'Admins')),
             not(eq(users.type, 'Administrator'))
         );
 
-        if (search) {
-            whereClause = and(
-                whereClause,
-                like(users.empname, `%${search}%`)
-            );
-        }
+        const whereClause = search ? and(
+            baseCondition,
+            like(users.empname, `%${search}%`)
+        ) : baseCondition;
+
+        const { page, limit, offset } = getPaginationParams(req);
+
+        // Count
+        const countResult = await db.select({ count: sql`count(*)` }).from(users).where(whereClause);
+        // @ts-ignore
+        const total = Number(countResult[0].count);
 
         const result = await db.select({
             id: users.id,
@@ -38,9 +41,9 @@ router.get('/', async (req: Request, res: Response) => {
             email: users.email,
             mobile: users.mobile,
             rights: users.rights
-        }).from(users).where(whereClause);
+        }).from(users).where(whereClause).limit(limit).offset(offset);
 
-        res.json(result);
+        res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }
