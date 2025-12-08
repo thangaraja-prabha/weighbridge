@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import ChangePassword from './pages/ChangePassword';
 import MasterData from './pages/MasterData';
@@ -22,6 +23,7 @@ function App() {
     return (
         <Router>
             <Routes>
+                <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
 
                 {/* Dashboard */}
@@ -291,7 +293,6 @@ function App() {
                     }
                 />
 
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
         </Router>
     );
