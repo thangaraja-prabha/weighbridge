@@ -1,19 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { dashboardApi, DropdownData, WeighInPayload } from '../api/dashboard';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const [liveWeight, setLiveWeight] = useState<string>('Loading...');
-    const lastWeightRef = useRef<string>('');
-    const [weightColor, setWeightColor] = useState<string>('text-green-500');
+    const [liveWeight] = useState<string>('No Device');
 
     // Ticket No
     const [ticketNo, setTicketNo] = useState<number | string>('...');
 
     // Dropdown Data
     const [dropdowns, setDropdowns] = useState<DropdownData>({
-        vehicles: [],
         materials: [],
         transporters: [],
         suppliers: [],
@@ -34,41 +31,18 @@ const Dashboard: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // Fetch live weight safely
-    useEffect(() => {
-        let isMounted = true;
-        let timeoutId: any;
-
-        const pollWeight = async () => {
-            // try {
-            //     const weight = await dashboardApi.getLiveWeight(); // Real API call
-            //     if (isMounted) {
-            //         setLiveWeight(weight);
-
-            //         if (weight !== lastWeightRef.current) {
-            //             setWeightColor('text-red-600');
-            //             setTimeout(() => {
-            //                 if (isMounted) setWeightColor('text-green-500');
-            //             }, 1000);
-            //             lastWeightRef.current = weight;
-            //         }
-            //     }
-            // } catch (err) {
-            //     console.error("Failed to fetch weight", err);
-            // } finally {
-            //     if (isMounted) {
-            //         timeoutId = setTimeout(pollWeight, 1000); // 1s delay recursive
-            //     }
-            // }
-        };
-
-        pollWeight();
-
-        return () => {
-            isMounted = false;
-            clearTimeout(timeoutId);
-        };
-    }, []);
+    // Fetch live weight (disabled for now)
+    // useEffect(() => {
+    //     const pollWeight = async () => {
+    //         try {
+    //             const weight = await dashboardApi.getLiveWeight();
+    //             setLiveWeight(weight);
+    //         } catch (err) {
+    //             console.error("Failed to fetch weight", err);
+    //         }
+    //     };
+    //     pollWeight();
+    // }, []);
 
     // Fetch initial data (Dropdowns & Ticket No)
     useEffect(() => {
@@ -88,7 +62,7 @@ const Dashboard: React.FC = () => {
         fetchData();
     }, []);
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -128,7 +102,7 @@ const Dashboard: React.FC = () => {
             <div className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100">
                 <div className="px-4 py-5 sm:p-6 text-center">
                     <h3 className="text-lg leading-6 font-medium text-gray-900 uppercase tracking-widest">Live Weight</h3>
-                    <div className={`mt-2 text-9xl font-mono font-bold transition-colors duration-300 ${weightColor}`}>
+                    <div className="mt-2 text-9xl font-mono font-bold text-gray-700">
                         {liveWeight}<span className="text-4xl ml-4 text-gray-400">kg</span>
                     </div>
                 </div>
@@ -180,23 +154,19 @@ const Dashboard: React.FC = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                        {/* Vehicle Number */}
+                        {/* Vehicle Number - Manual Input */}
                         <div>
-                            <div className="flex justify-between">
-                                <label htmlFor="vnum" className="block text-sm font-medium text-gray-700">Vehicle Number</label>
-                                <button type="button" onClick={() => navigate('/master?tab=vehicle')} className="text-xs text-primary hover:underline font-bold">+ ADD</button>
-                            </div>
-                            <select
+                            <label htmlFor="vnum" className="block text-sm font-medium text-gray-700">Vehicle Number</label>
+                            <input
+                                type="text"
                                 id="vnum"
                                 name="vnum"
                                 required
                                 value={formData.vnum}
                                 onChange={handleChange}
+                                placeholder="Enter vehicle number"
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                            >
-                                <option value="">-- Select --</option>
-                                {dropdowns.vehicles.map(v => <option key={v} value={v}>{v}</option>)}
-                            </select>
+                            />
                         </div>
 
                         {/* Material */}
@@ -214,7 +184,7 @@ const Dashboard: React.FC = () => {
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                             >
                                 <option value="">-- Select --</option>
-                                {dropdowns.materials.map(m => <option key={m} value={m}>{m}</option>)}
+                                {dropdowns.materials.map(m => <option key={m.id} value={m.value}>{m.value}</option>)}
                             </select>
                         </div>
 
@@ -233,7 +203,7 @@ const Dashboard: React.FC = () => {
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                             >
                                 <option value="">-- Select --</option>
-                                {dropdowns.transporters.map(t => <option key={t} value={t}>{t}</option>)}
+                                {dropdowns.transporters.map(t => <option key={t.id} value={t.value}>{t.value}</option>)}
                             </select>
                         </div>
 
@@ -252,7 +222,7 @@ const Dashboard: React.FC = () => {
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                             >
                                 <option value="">-- Select --</option>
-                                {dropdowns.suppliers.map(s => <option key={s} value={s}>{s}</option>)}
+                                {dropdowns.suppliers.map(s => <option key={s.id} value={s.value}>{s.value}</option>)}
                             </select>
                         </div>
 
@@ -271,7 +241,7 @@ const Dashboard: React.FC = () => {
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                             >
                                 <option value="">-- Select --</option>
-                                {dropdowns.customers.map(c => <option key={c} value={c}>{c}</option>)}
+                                {dropdowns.customers.map(c => <option key={c.id} value={c.value}>{c.value}</option>)}
                             </select>
                         </div>
 

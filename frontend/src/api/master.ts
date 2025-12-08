@@ -48,7 +48,63 @@ export const masterApi = {
         return response.json();
     },
 
-    // Machines
+    // Machines (New relational table)
+    getMaterials: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/materials?page=${page}&limit=${limit}`, { headers: getHeaders() });
+        return response.json();
+    },
+    createMaterial: async (mname: string, mdetail: string) => {
+        const response = await fetch(`${API_URL}/master/materials`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ mname, mdetail })
+        });
+        return response.json();
+    },
+
+    // Customers (New relational table)
+    getCustomersNew: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/customers?page=${page}&limit=${limit}`, { headers: getHeaders() });
+        return response.json();
+    },
+    createCustomerNew: async (cname: string, cadd: string, cnum: string, crem: string) => {
+        const response = await fetch(`${API_URL}/master/customers`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ cname, cadd, cnum, crem })
+        });
+        return response.json();
+    },
+
+    // Suppliers (New relational table)
+    getSuppliersNew: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/suppliers?page=${page}&limit=${limit}`, { headers: getHeaders() });
+        return response.json();
+    },
+    createSupplierNew: async (sname: string, sadd: string, snum: string, srem: string) => {
+        const response = await fetch(`${API_URL}/master/suppliers`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ sname, sadd, snum, srem })
+        });
+        return response.json();
+    },
+
+    // Transporters (New relational table)
+    getTransportersNew: async (page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/master/transporters?page=${page}&limit=${limit}`, { headers: getHeaders() });
+        return response.json();
+    },
+    createTransporterNew: async (tnum: string, tname: string, tadd: string, tmob: string, trem: string) => {
+        const response = await fetch(`${API_URL}/master/transporters`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ tnum, tname, tadd, tmob, trem })
+        });
+        return response.json();
+    },
+
+    // Legacy endpoints for backward compatibility
     getMachines: async (page = 1, limit = 10) => {
         const response = await fetch(`${API_URL}/master/mdetail?page=${page}&limit=${limit}`, { headers: getHeaders() });
         return response.json();
@@ -118,7 +174,7 @@ export const masterApi = {
         return response.json();
     },
 
-    // Delete Generic
+    // Delete Generic (updated to support new tables)
     deleteItem: async (type: string, id: number) => {
         const response = await fetch(`${API_URL}/master/${type}/${id}`, {
             method: 'DELETE',

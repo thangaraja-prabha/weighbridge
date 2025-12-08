@@ -8,23 +8,38 @@ const longtext = customType<{ data: string }>({
 
 export const users = mysqlTable('users', {
     id: int('id').primaryKey().autoincrement(),
-    username: varchar('username', { length: 100 }).notNull(),
-    password: varchar('password', { length: 100 }).notNull(),
-    rights: varchar('rights', { length: 100 }),
-    type: varchar('type', { length: 100 }),
-    empname: varchar('empname', { length: 100 }),
-    empcode: varchar('empcode', { length: 100 }),
-    empdest: varchar('empdest', { length: 100 }),
-    email: varchar('email', { length: 100 }),
-    mobile: varchar('mobile', { length: 100 }),
-    dob: date('dob'),
-    doj: date('doj'),
-    trn_date: datetime('trn_date'),
-    imagetitle: varchar('imagetitle', { length: 255 }),
-    otp: varchar('otp', { length: 100 }),
+    uname: varchar('uname', { length: 30 }).notNull(),
+    pass: varchar('pass', { length: 255 }).notNull(),
+    fname: varchar('fname', { length: 30 }),
+    email: varchar('email', { length: 50 }),
+    mobile: varchar('mobile', { length: 30 }),
+    rid: int('rid'),
+    pid: int('pid'),
+    comname: varchar('comname', { length: 50 }),
+    comadd: text('comadd'),
+    comnum: varchar('comnum', { length: 20 }).notNull(),
+    comail: varchar('comail', { length: 30 }).notNull(),
+    apikey: varchar('apikey', { length: 8 }).notNull(),
+    udt: varchar('udt', { length: 20 })
 });
 
 export const wlog = mysqlTable('wlog', {
+    id: int('id').primaryKey().autoincrement(),
+    fwt: int('fwt'),
+    lwt: int('lwt'),
+    swt: int('swt'),
+    mode: int('mode'),
+    mid: int('mid'),
+    vid: int('vid'),
+    sid: int('sid'),
+    cid: int('cid'),
+    apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+// Legacy wlog table for backward compatibility
+export const wlog_legacy = mysqlTable('wlog_legacy', {
     id: int('id').primaryKey().autoincrement(),
     vnum: varchar('vnum', { length: 20 }),
     mname: varchar('mname', { length: 50 }),
@@ -65,6 +80,81 @@ export const mlog = mysqlTable('mlog', {
     numail: varchar('numail', { length: 50 }),
 });
 
+// New relational tables
+export const customers = mysqlTable('customers', {
+    id: int('id').primaryKey().autoincrement(),
+    cname: varchar('cname', { length: 30 }),
+    cadd: text('cadd'),
+    cnum: varchar('cnum', { length: 30 }),
+    crem: text('crem'),
+    apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+export const materials = mysqlTable('materials', {
+    id: int('id').primaryKey().autoincrement(),
+    mname: varchar('mname', { length: 30 }),
+    mdetail: text('mdetail'),
+    apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+export const suppliers = mysqlTable('suppliers', {
+    id: int('id').primaryKey().autoincrement(),
+    sname: varchar('sname', { length: 30 }),
+    sadd: text('sadd'),
+    snum: varchar('snum', { length: 30 }),
+    srem: text('srem'),
+    apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+export const tdetails = mysqlTable('tdetails', {
+    id: int('id').primaryKey().autoincrement(),
+    tnum: varchar('tnum', { length: 10 }),
+    tname: varchar('tname', { length: 30 }),
+    tadd: text('tadd'),
+    tmob: varchar('tmob', { length: 30 }),
+    trem: text('trem'),
+    apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+export const modes = mysqlTable('modes', {
+    id: int('id').primaryKey().autoincrement(),
+    mode: varchar('mode', { length: 10 }).notNull()
+});
+
+export const roles = mysqlTable('roles', {
+    id: int('id').primaryKey().autoincrement(),
+    role: varchar('role', { length: 20 }),
+    apikey: varchar('apikey', { length: 10 }).notNull(),
+    uid: int('uid').notNull(),
+    udt: varchar('udt', { length: 20 }).notNull()
+});
+
+export const privillages = mysqlTable('privillages', {
+    id: int('id').primaryKey().autoincrement(),
+    privil: varchar('privil', { length: 20 }).notNull(),
+    apikey: varchar('apikey', { length: 10 }).notNull(),
+    uid: int('uid').notNull(),
+    udt: varchar('udt', { length: 20 }).notNull()
+});
+
+export const ulog = mysqlTable('ulog', {
+    id: int('id').primaryKey().autoincrement(),
+    login_dt: varchar('login_dt', { length: 20 }),
+    logout_dt: varchar('logout_dt', { length: 20 }),
+    apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+// Legacy tables for backward compatibility
 export const vdetail = mysqlTable('vdetail', {
     id: int('id').primaryKey().autoincrement(),
     vnum: varchar('vnum', { length: 50 }),
@@ -125,6 +215,18 @@ export const nopt = mysqlTable('nopt', {
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
+export type Material = typeof materials.$inferSelect;
+export type NewMaterial = typeof materials.$inferInsert;
+export type Supplier = typeof suppliers.$inferSelect;
+export type NewSupplier = typeof suppliers.$inferInsert;
+export type Tdetail = typeof tdetails.$inferSelect;
+export type NewTdetail = typeof tdetails.$inferInsert;
+export type Wlog = typeof wlog.$inferSelect;
+export type NewWlog = typeof wlog.$inferInsert;
+export type WlogLegacy = typeof wlog_legacy.$inferSelect;
+export type NewWlogLegacy = typeof wlog_legacy.$inferInsert;
 
 export const kyc_records = mysqlTable('kyc_records', {
     id: int('id').primaryKey().autoincrement(),

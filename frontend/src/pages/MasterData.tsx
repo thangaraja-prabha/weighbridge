@@ -174,7 +174,7 @@ const MasterData: React.FC<MasterDataProps> = ({ defaultTab = 'dept' }) => {
         { id: 'dept', label: 'Departments', icon: Building2 },
         { id: 'shift', label: 'Shifts', icon: Clock },
         { id: 'nop', label: 'Nature of Problem', icon: AlertCircle },
-        { id: 'machine', label: 'Machine Details', icon: Cpu },
+        { id: 'machine', label: 'Materials', icon: Cpu },
         { id: 'vehicle', label: 'Vehicles', icon: Truck },
         { id: 'transporter', label: 'Transporters', icon: TruckIcon },
         { id: 'supplier', label: 'Suppliers', icon: Package },
@@ -198,11 +198,11 @@ const MasterData: React.FC<MasterDataProps> = ({ defaultTab = 'dept' }) => {
                 case 'dept': res = await masterApi.getDepts(page); break;
                 case 'shift': res = await masterApi.getShifts(page); break;
                 case 'nop': res = await masterApi.getNops(page); break;
-                case 'machine': res = await masterApi.getMachines(page); break;
+                case 'machine': res = await masterApi.getMaterials(page); break;
                 case 'vehicle': res = await masterApi.getVehicles(page); break;
-                case 'transporter': res = await masterApi.getTransporters(page); break;
-                case 'supplier': res = await masterApi.getSuppliers(page); break;
-                case 'customer': res = await masterApi.getCustomers(page); break;
+                case 'transporter': res = await masterApi.getTransportersNew(page); break;
+                case 'supplier': res = await masterApi.getSuppliersNew(page); break;
+                case 'customer': res = await masterApi.getCustomersNew(page); break;
             }
             if (res) {
                 setData(res.data || []);
@@ -244,23 +244,23 @@ const MasterData: React.FC<MasterDataProps> = ({ defaultTab = 'dept' }) => {
                     message = 'Nature of Problem added successfully';
                     break;
                 case 'machine': 
-                    await masterApi.createMachine(formData.mname);
-                    message = 'Machine added successfully';
+                    await masterApi.createMaterial(formData.mname, formData.mdetail || '');
+                    message = 'Material added successfully';
                     break;
                 case 'vehicle': 
                     await masterApi.createVehicle(formData.vnum);
                     message = 'Vehicle added successfully';
                     break;
                 case 'transporter': 
-                    await masterApi.createTransporter(formData.tname);
+                    await masterApi.createTransporterNew(formData.tnum || '', formData.tname, formData.tadd || '', formData.tmob || '', formData.trem || '');
                     message = 'Transporter added successfully';
                     break;
                 case 'supplier': 
-                    await masterApi.createSupplier(formData.sname);
+                    await masterApi.createSupplierNew(formData.sname, formData.sadd || '', formData.snum || '', formData.srem || '');
                     message = 'Supplier added successfully';
                     break;
                 case 'customer': 
-                    await masterApi.createCustomer(formData.cname);
+                    await masterApi.createCustomerNew(formData.cname, formData.cadd || '', formData.cnum || '', formData.crem || '');
                     message = 'Customer added successfully';
                     break;
             }
@@ -285,7 +285,10 @@ const MasterData: React.FC<MasterDataProps> = ({ defaultTab = 'dept' }) => {
         try {
             let type = activeTab;
             if (activeTab === 'shift') type = 'shifts';
-            if (activeTab === 'machine') type = 'mdetail';
+            if (activeTab === 'machine') type = 'materials';
+            if (activeTab === 'transporter') type = 'transporters';
+            if (activeTab === 'supplier') type = 'suppliers';
+            if (activeTab === 'customer') type = 'customers';
             
             await masterApi.deleteItem(type, id);
             await loadData();
@@ -338,9 +341,9 @@ const MasterData: React.FC<MasterDataProps> = ({ defaultTab = 'dept' }) => {
                 />;
             case 'machine':
                 return <GenericSection
-                    title="Machine Details" {...commonProps}
-                    columns={[{ key: 'mname', label: 'Machine Name' }]}
-                    addFields={[{ name: 'mname', label: 'Machine Name' }]}
+                    title="Materials" {...commonProps}
+                    columns={[{ key: 'mname', label: 'Material Name' }, { key: 'mdetail', label: 'Details' }]}
+                    addFields={[{ name: 'mname', label: 'Material Name' }, { name: 'mdetail', label: 'Details' }]}
                 />;
             case 'vehicle':
                 return <GenericSection
@@ -351,20 +354,20 @@ const MasterData: React.FC<MasterDataProps> = ({ defaultTab = 'dept' }) => {
             case 'transporter':
                 return <GenericSection
                     title="Transporters" {...commonProps}
-                    columns={[{ key: 'tname', label: 'Transporter Name' }]}
-                    addFields={[{ name: 'tname', label: 'Transporter Name' }]}
+                    columns={[{ key: 'tname', label: 'Transporter Name' }, { key: 'tadd', label: 'Address' }, { key: 'tmob', label: 'Mobile' }]}
+                    addFields={[{ name: 'tname', label: 'Transporter Name' }, { name: 'tadd', label: 'Address' }, { name: 'tmob', label: 'Mobile' }, { name: 'trem', label: 'Remarks' }]}
                 />;
             case 'supplier':
                 return <GenericSection
                     title="Suppliers" {...commonProps}
-                    columns={[{ key: 'sname', label: 'Supplier Name' }]}
-                    addFields={[{ name: 'sname', label: 'Supplier Name' }]}
+                    columns={[{ key: 'sname', label: 'Supplier Name' }, { key: 'sadd', label: 'Address' }, { key: 'snum', label: 'Mobile' }]}
+                    addFields={[{ name: 'sname', label: 'Supplier Name' }, { name: 'sadd', label: 'Address' }, { name: 'snum', label: 'Mobile' }, { name: 'srem', label: 'Remarks' }]}
                 />;
             case 'customer':
                 return <GenericSection
                     title="Customers" {...commonProps}
-                    columns={[{ key: 'cname', label: 'Customer Name' }]}
-                    addFields={[{ name: 'cname', label: 'Customer Name' }]}
+                    columns={[{ key: 'cname', label: 'Customer Name' }, { key: 'cadd', label: 'Address' }, { key: 'cnum', label: 'Mobile' }]}
+                    addFields={[{ name: 'cname', label: 'Customer Name' }, { name: 'cadd', label: 'Address' }, { name: 'cnum', label: 'Mobile' }, { name: 'crem', label: 'Remarks' }]}
                 />;
             default: 
                 return null;

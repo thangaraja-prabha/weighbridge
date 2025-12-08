@@ -9,7 +9,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const role = user.rights || '';
+    const role = user.rid || 1; // Default to user role 1
+    
+    // Debug: Log user info
+    console.log('User from localStorage:', user);
+    console.log('User rid:', role);
     const navigate = useNavigate();
     const location = useLocation();
     const userMenuRef = useRef<HTMLDivElement>(null);
@@ -165,7 +169,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <ul className="space-y-1">
                         <MenuItem to="/dashboard" label="DASHBOARD" icon={Icons.Dashboard} />
 
-                        {role === 'Managers' && (
+                        {role === 2 && ( // Managers
                             <>
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
                                 <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>
@@ -175,15 +179,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     <SubMenuItem to="/status" label="STATUS" />
                                     <SubMenuItem to="/logs" label="LOGS" />
                                 </MenuItem>
+                                <MenuItem label="MASTER DATA" isDropdown icon={Icons.Config}>
+                                    <SubMenuItem to="/customers" label="CUSTOMERS" />
+                                    <SubMenuItem to="/materials" label="MATERIALS" />
+                                    <SubMenuItem to="/suppliers" label="SUPPLIERS" />
+                                    <SubMenuItem to="/transporters" label="TRANSPORTERS" />
+                                </MenuItem>
                                 <MenuItem label="CONFIG" isDropdown icon={Icons.Config}>
-                                    <SubMenuItem to="/registration" label="CREATE USER" />
                                     <SubMenuItem to="/employees" label="USERS" />
                                     <SubMenuItem to="/setting" label="SETTING" />
                                 </MenuItem>
                             </>
                         )}
 
-                        {role === 'Users' && (
+                        {role === 1 && ( // Users
                             <>
                                 <MenuItem to="/entry" label="ENTRY" icon={Icons.Entry} />
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
@@ -202,7 +211,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             </>
                         )}
 
-                        {role === 'Admin' && (
+                        {role === 1 && ( // Admin (assuming admin is rid=1)
                             <>
                                 <MenuItem label="INT. WEIGHMENT" isDropdown icon={Icons.WeighIn}>
                                     <SubMenuItem to="/int/weighin" label="FIRST WEIGHMENT" />
@@ -236,6 +245,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
                             </>
                         )}
+
+                        {/* Fallback for other roles */}
+                        {![1, 2, 3].includes(role) && (
+                            <>
+                                <MenuItem to="/dashboard" label="WEIGH IN" icon={Icons.WeighIn} />
+                                <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
+                                <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>
+                                    <SubMenuItem to="/rdash" label="DASHBOARD REPORT" />
+                                    <SubMenuItem to="/cust" label="CUSTOM REPORT" />
+                                </MenuItem>
+                                <MenuItem to="/master-data" label="MASTER DATA" icon={Icons.Config} />
+                            </>
+                        )}
                     </ul>
                 </nav>
             </aside>
@@ -266,7 +288,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         >
                             <div className="text-right hidden sm:block">
                                 <div className="text-sm font-medium text-gray-900">{user.personName || user.username}</div>
-                                <div className="text-xs text-gray-500">{user.rights}</div>
+                                <div className="text-xs text-gray-500">{role === 1 ? 'Admin' : role === 2 ? 'Manager' : 'User'}</div>
                             </div>
                             <div className="h-10 w-10 number-font bg-primary rounded-full flex items-center justify-center text-white font-bold shadow hover:bg-sky-500 transition-colors">
                                 {user.username?.charAt(0).toUpperCase()}
@@ -281,7 +303,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-50">
                                 <div className="px-4 py-2 border-b border-gray-100 sm:hidden">
                                     <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                                    <div className="text-xs text-gray-500">{user.rights}</div>
+                                    <div className="text-xs text-gray-500">{role === 1 ? 'Admin' : role === 2 ? 'Manager' : 'User'}</div>
                                 </div>
                                 <button
                                     onClick={() => { navigate('/cpwd'); setIsUserMenuOpen(false); }}

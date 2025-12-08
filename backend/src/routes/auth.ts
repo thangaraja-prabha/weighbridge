@@ -8,13 +8,23 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
+// Helper function to generate API key
+function generateApiKey(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
 // Register endpoint
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
     try {
-        const { username, personName, email, mobile, password, rights } = req.body;
+        const { username, personName, email, mobile, password } = req.body;
 
         // Validate required fields
-        if (!username || !personName || !email || !password || !rights) {
+        if (!username || !personName || !email || !password) {
             res.status(400).json({
                 success: false,
                 message: 'Please provide all required fields',
@@ -26,7 +36,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
         const existingUser = await db
             .select()
             .from(users)
-            .where(eq(users.username, username))
+            .where(eq(users.uname, username))
             .limit(1);
 
         if (existingUser.length > 0) {
@@ -56,14 +66,21 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert new user
+        const apikey = generateApiKey();
         const result = await db.insert(users).values({
-            username,
-            empname: personName, // Map frontend personName to DB empname
+            uname: username,
+            fname: personName,
             email,
             mobile: mobile || '',
-            password: hashedPassword,
-            rights,
-            trn_date: new Date(),
+            pass: hashedPassword,
+            rid: 1, // Default role
+            pid: 1, // Default privilege
+            comname: 'Default Company',
+            comadd: '',
+            comnum: '',
+            comail: '',
+            apikey: apikey,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
         });
 
         res.status(201).json({
@@ -103,7 +120,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         const userResult = await db
             .select()
             .from(users)
-            .where(eq(users.username, username))
+            .where(eq(users.uname, username))
             .limit(1);
 
         if (userResult.length === 0) {
@@ -117,7 +134,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         const user = userResult[0];
 
         // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.pass);
 
         if (!isPasswordValid) {
             res.status(401).json({
@@ -132,8 +149,11 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         const token = jwt.sign(
             {
                 id: user.id,
-                username: user.username,
-                rights: user.rights,
+                uname: user.uname,
+                fname: user.fname,
+                apikey: user.apikey,
+                rid: user.rid,
+                pid: user.pid,
             },
             jwtSecret,
             { expiresIn: '24h' }
@@ -146,10 +166,13 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
                 token,
                 user: {
                     id: user.id,
-                    username: user.username,
-                    personName: user.empname, // Map DB empname to frontend personName
+                    username: user.uname,
+                    personName: user.fname,
                     email: user.email,
-                    rights: user.rights,
+                    mobile: user.mobile,
+                    apikey: user.apikey,
+                    rid: user.rid,
+                    pid: user.pid,
                 },
             },
         });
@@ -184,11 +207,13 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
         const userResult = await db
             .select({
                 id: users.id,
-                username: users.username,
-                personName: users.empname, // Map DB empname to frontend personName
+                username: users.uname,
+                personName: users.fname,
                 email: users.email,
                 mobile: users.mobile,
-                rights: users.rights,
+                apikey: users.apikey,
+                rid: users.rid,
+                pid: users.pid,
             })
             .from(users)
             .where(eq(users.id, req.user.id))

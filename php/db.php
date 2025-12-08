@@ -5,7 +5,7 @@ if ($s=='localhost')
 $hostname = "localhost";
 $Username = "root";
 $Password = "";
-$dbname = "weighbridge";
+$dbname = "wb2025";
 
 $con=mysqli_connect($hostname, $Username, $Password, $dbname);
 if(!$con){

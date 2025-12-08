@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { wlog } from '../db/schema';
+import { wlog_legacy } from '../db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
@@ -20,13 +20,13 @@ router.post('/first', async (req: Request, res: Response) => {
         const now = new Date();
         const trn_date = now.toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:mm:ss
 
-        await db.insert(wlog).values({
+        await db.insert(wlog_legacy).values({
             vnum, mname, tname, sname, cname, remarks,
             wt1: wt1 || '0',
             wt1at: trn_date,
-            wt1by: (req as any).user.username,
+            wt1by: (req as any).user.uname,
             stat: 'W1',
-            username: (req as any).user.username,
+            username: (req as any).user.uname,
             trn_date: trn_date
         });
 
@@ -42,14 +42,14 @@ router.get('/pending', async (req: Request, res: Response) => {
         const { page, limit, offset } = getPaginationParams(req);
 
         // Count total
-        const countResult = await db.select({ count: sql`count(*)` }).from(wlog).where(eq(wlog.stat, 'W1'));
+        const countResult = await db.select({ count: sql`count(*)` }).from(wlog_legacy).where(eq(wlog_legacy.stat, 'W1'));
         // @ts-ignore
         const total = Number(countResult[0].count);
 
         const result = await db.select()
-            .from(wlog)
-            .where(eq(wlog.stat, 'W1'))
-            .orderBy(desc(wlog.id))
+            .from(wlog_legacy)
+            .where(eq(wlog_legacy.stat, 'W1'))
+            .orderBy(desc(wlog_legacy.id))
             .limit(limit)
             .offset(offset);
 
@@ -62,7 +62,7 @@ router.get('/pending', async (req: Request, res: Response) => {
 // Get Single Record
 router.get('/:id', async (req: Request, res: Response) => {
     try {
-        const result = await db.select().from(wlog).where(eq(wlog.id, parseInt(req.params.id)));
+        const result = await db.select().from(wlog_legacy).where(eq(wlog_legacy.id, parseInt(req.params.id)));
         if (result.length === 0) return res.status(404).json({ error: 'Record not found' });
         res.json(result[0]);
     } catch (err: any) {
@@ -76,7 +76,7 @@ router.post('/second', async (req: Request, res: Response) => {
         const { id, wt2, remarks } = req.body;
 
         // Calculate Net Weight
-        const record = await db.select().from(wlog).where(eq(wlog.id, parseInt(id)));
+        const record = await db.select().from(wlog_legacy).where(eq(wlog_legacy.id, parseInt(id)));
         if (record.length === 0) return res.status(404).json({ error: 'Record not found' });
 
         const wt1 = parseFloat(record[0].wt1 || '0');
@@ -86,14 +86,14 @@ router.post('/second', async (req: Request, res: Response) => {
         const now = new Date();
         const trn_date = now.toISOString().slice(0, 19).replace('T', ' ');
 
-        await db.update(wlog).set({
+        await db.update(wlog_legacy).set({
             wt2: wt2,
             wt2at: trn_date,
-            wt2by: (req as any).user.username,
+            wt2by: (req as any).user.uname,
             wt: netWt,
             stat: 'Second Completed', // Or 'W2' ? PHP used 'Completed' in mlog, 'W1' in wlog. I'll use 'Completed'.
             remarks: remarks || record[0].remarks
-        }).where(eq(wlog.id, parseInt(id)));
+        }).where(eq(wlog_legacy.id, parseInt(id)));
 
         res.json({ success: true, message: 'Second weighment saved', netWeight: netWt });
     } catch (err: any) {

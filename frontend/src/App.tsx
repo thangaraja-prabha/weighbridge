@@ -8,6 +8,10 @@ import Users from './pages/Users';
 import Reports from './pages/Reports';
 import WeighIn from './pages/WeighIn';
 import WeighOut from './pages/WeighOut';
+import Customers from './pages/Customers';
+import Materials from './pages/Materials';
+import Suppliers from './pages/Suppliers';
+import Transporters from './pages/Transporters';
 import Layout from './components/Layout';
 
 // Protected Route Component
@@ -234,6 +238,48 @@ function App() {
                         <ProtectedRoute>
                             <Layout>
                                 <Reports defaultGroupBy="stat" />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Table Management Routes */}
+                <Route
+                    path="/customers"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Customers />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/materials"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Materials />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/suppliers"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Suppliers />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/transporters"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Transporters />
                             </Layout>
                         </ProtectedRoute>
                     }

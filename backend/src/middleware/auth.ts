@@ -4,8 +4,11 @@ import jwt from 'jsonwebtoken';
 export interface AuthRequest extends Request {
     user?: {
         id: number;
-        username: string;
-        rights: string;
+        uname: string;
+        fname: string;
+        apikey: string;
+        rid: number;
+        pid: number;
     };
 }
 
@@ -32,8 +35,11 @@ export const authMiddleware = (
         const jwtSecret = process.env.JWT_SECRET || 'default-secret-key';
         const decoded = jwt.verify(token, jwtSecret) as {
             id: number;
-            username: string;
-            rights: string;
+            uname: string;
+            fname: string;
+            apikey: string;
+            rid: number;
+            pid: number;
         };
 
         // Attach user to request

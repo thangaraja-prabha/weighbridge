@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { wlog, vdetail, mdetail, tdetail, sdetail, cdetail } from '../db/schema';
+import { wlog, mdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import fs from 'fs';
 import path from 'path';
@@ -26,22 +27,21 @@ router.get('/live-weight', (req: Request, res: Response) => {
 // Get dropdown data
 router.get('/dropdowns', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const [vehicles, materials, transporters, suppliers, customers] = await Promise.all([
-            db.selectDistinct({ value: vdetail.vnum }).from(vdetail),
-            db.selectDistinct({ value: mdetail.mname }).from(mdetail),
-            db.selectDistinct({ value: tdetail.tname }).from(tdetail),
-            db.selectDistinct({ value: sdetail.sname }).from(sdetail),
-            db.selectDistinct({ value: cdetail.cname }).from(cdetail),
+        // Use existing tables for dropdown data
+        const [materialsList, transporters, suppliersList, customersList] = await Promise.all([
+            db.select({ id: materials.id, value: materials.mname }).from(materials),
+            db.select({ id: tdetails.id, value: tdetails.tname }).from(tdetails),
+            db.select({ id: suppliers.id, value: suppliers.sname }).from(suppliers),
+            db.select({ id: customers.id, value: customers.cname }).from(customers),
         ]);
 
         res.json({
             success: true,
             data: {
-                vehicles: vehicles.map(v => v.value),
-                materials: materials.map(m => m.value),
-                transporters: transporters.map(t => t.value),
-                suppliers: suppliers.map(s => s.value),
-                customers: customers.map(c => c.value),
+                materials: materialsList,
+                transporters: transporters,
+                suppliers: suppliersList,
+                customers: customersList,
             },
         });
     } catch (error) {
@@ -73,18 +73,9 @@ router.post('/weigh-in', authMiddleware, async (req: AuthRequest, res: Response)
     if (!req.user) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     try {
-        const { vnum, mname, tname, sname, cname, remarks } = req.body;
+        const { vnum, mname, tname, sname, cname, remarks, mode = 1 } = req.body;
 
-        // Read current weight internally to be safe? 
-        // Usually weighbridge sends weight from UI or read again from backend.
-        // The PHP does not seem to read it, it takes inputs. 
-        // Wait, PHP index.php says:
-        // $wt1 = '56675'; (HARDCODED???)
-        // Ah, line 407: $wt1 = '56675';
-        // This looks like testing code in the PHP user provided.
-        // Ideally we should read the weight from the file at moment of submission.
-
-        // Let's read from file for the actual weight
+        // Read current weight from file
         let currentWeight = '0';
         try {
             const filePath = 'C:\\WindowsService\\latest_data.txt';
@@ -95,21 +86,25 @@ router.post('/weigh-in', authMiddleware, async (req: AuthRequest, res: Response)
             console.error('Could not read weight for storage', e);
         }
 
-        // Insert
-        // stat = 'W1' (First Weighment)
+        // Get IDs from the new relational tables
+        const material = await db.select({ id: materials.id }).from(materials).where(eq(materials.mname, mname)).limit(1);
+        const transporter = await db.select({ id: tdetails.id }).from(tdetails).where(eq(tdetails.tname, tname)).limit(1);
+        const supplier = await db.select({ id: suppliers.id }).from(suppliers).where(eq(suppliers.sname, sname)).limit(1);
+        const customer = await db.select({ id: customers.id }).from(customers).where(eq(customers.cname, cname)).limit(1);
+
+        // Insert with new relational structure
         await db.insert(wlog).values({
-            vnum,
-            mname,
-            tname,
-            sname,
-            cname,
-            wt1: currentWeight,
-            wt1at: new Date().toISOString().slice(0, 19).replace('T', ' '),
-            wt1by: req.user.username,
-            remarks,
-            stat: 'W1',
-            username: req.user.username,
-            trn_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+            fwt: parseInt(currentWeight) || 0,
+            lwt: 0, // Will be updated on weigh-out
+            swt: 0, // Will be calculated on weigh-out
+            mode: mode,
+            mid: material.length > 0 ? material[0].id : null,
+            vid: 1, // TODO: Get vehicle ID from vdetail table
+            sid: supplier.length > 0 ? supplier[0].id : null,
+            cid: customer.length > 0 ? customer[0].id : null,
+            apikey: (req as any).user.apikey || 'WESOPC01',
+            uid: (req as any).user.id || 1,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
         });
 
         res.json({ success: true, message: 'First weighment recorded successfully' });

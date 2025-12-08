@@ -1,11 +1,10 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 export interface DropdownData {
-    vehicles: string[];
-    materials: string[];
-    transporters: string[];
-    suppliers: string[];
-    customers: string[];
+    materials: { id: number; value: string }[];
+    transporters: { id: number; value: string }[];
+    suppliers: { id: number; value: string }[];
+    customers: { id: number; value: string }[];
 }
 
 export interface WeighInPayload {

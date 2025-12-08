@@ -9,6 +9,7 @@ import userRoutes from './routes/users';
 import reportRoutes from './routes/reports';
 import weighmentRoutes from './routes/weighment';
 import kycRoutes from './routes/kyc';
+import tableRoutes from './routes/tables';
 import { testConnection } from './db';
 
 // Load environment variables
@@ -48,6 +49,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/weighment', weighmentRoutes);
 app.use('/api/kyc', kycRoutes);
+app.use('/api/tables', tableRoutes);
 
 // Serve index.html for any other GET request (SPA fallback)
 app.get('/{*splat}', (req: Request, res: Response) => {

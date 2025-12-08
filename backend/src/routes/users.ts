@@ -14,15 +14,14 @@ router.get('/', async (req: Request, res: Response) => {
     try {
         const search = req.query.search as string;
 
-        // Base condition: Not Admins
+        // Base condition: Not Admins (based on role)
         const baseCondition = and(
-            not(eq(users.type, 'Admins')),
-            not(eq(users.type, 'Administrator'))
+            not(eq(users.rid, 1)) // Assuming role 1 is admin
         );
 
         const whereClause = search ? and(
             baseCondition,
-            like(users.empname, `%${search}%`)
+            like(users.fname, `%${search}%`)
         ) : baseCondition;
 
         const { page, limit, offset } = getPaginationParams(req);
@@ -34,13 +33,13 @@ router.get('/', async (req: Request, res: Response) => {
 
         const result = await db.select({
             id: users.id,
-            username: users.username,
-            empname: users.empname,
-            empdest: users.empdest,
-            empcode: users.empcode,
+            username: users.uname,
+            fname: users.fname,
             email: users.email,
             mobile: users.mobile,
-            rights: users.rights
+            apikey: users.apikey,
+            rid: users.rid,
+            pid: users.pid
         }).from(users).where(whereClause).limit(limit).offset(offset);
 
         res.json(createPaginatedResponse(result, total, page, limit));

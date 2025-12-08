@@ -36,10 +36,10 @@ const WeighIn: React.FC<WeighInProps> = ({ type = 'internal' }) => {
         try {
             const [v, m, t, s, c] = await Promise.all([
                 masterApi.getVehicles(),
-                masterApi.getMachines(),
-                masterApi.getTransporters(),
-                masterApi.getSuppliers(),
-                masterApi.getCustomers()
+                masterApi.getMaterials(),
+                masterApi.getTransportersNew(),
+                masterApi.getSuppliersNew(),
+                masterApi.getCustomersNew()
             ]);
             setVehicles(v);
             setMachines(m);
