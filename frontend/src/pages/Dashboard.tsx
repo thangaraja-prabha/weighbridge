@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardApi, DropdownData, WeighInPayload } from '../api/dashboard';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -62,8 +63,14 @@ const Dashboard: React.FC = () => {
         fetchData();
     }, []);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSelectChange = (selectedOption: any, { name }: { name?: string }) => {
+        if (name) {
+            setFormData({ ...formData, [name]: selectedOption?.value || '' });
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -175,17 +182,25 @@ const Dashboard: React.FC = () => {
                                 <label htmlFor="mname" className="block text-sm font-medium text-gray-700">Item Description</label>
                                 <button type="button" onClick={() => navigate('/master?tab=machine')} className="text-xs text-primary hover:underline font-bold">+ ADD</button>
                             </div>
-                            <select
-                                id="mname"
-                                name="mname"
-                                required
-                                value={formData.mname}
-                                onChange={handleChange}
-                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                            >
-                                <option value="">-- Select --</option>
-                                {dropdowns.materials.map(m => <option key={m.id} value={m.value}>{m.value}</option>)}
-                            </select>
+                            <div className="flex space-x-2">
+                                <Select
+                                    id="mname"
+                                    name="mname"
+                                    className="mt-1 w-full text-sm"
+                                    classNamePrefix="select"
+                                    value={dropdowns.materials.find((item) => item.value === formData.mname) ? 
+                                        { value: formData.mname, label: formData.mname } : null}
+                                    onChange={handleSelectChange}
+                                    options={dropdowns.materials.map(item => ({
+                                        value: item.value,
+                                        label: item.value
+                                    }))}
+                                    placeholder="Select item..."
+                                    isSearchable
+                                    required
+                                />
+                                <button type="button" onClick={() => navigate('/master?tab=machine')} className="text-primary hover:text-sky-700">+</button>
+                            </div>
                         </div>
 
                         {/* Transporter */}
@@ -194,17 +209,25 @@ const Dashboard: React.FC = () => {
                                 <label htmlFor="tname" className="block text-sm font-medium text-gray-700">Transporter Details</label>
                                 <button type="button" onClick={() => navigate('/master?tab=transporter')} className="text-xs text-primary hover:underline font-bold">+ ADD</button>
                             </div>
-                            <select
-                                id="tname"
-                                name="tname"
-                                required
-                                value={formData.tname}
-                                onChange={handleChange}
-                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                            >
-                                <option value="">-- Select --</option>
-                                {dropdowns.transporters.map(t => <option key={t.id} value={t.value}>{t.value}</option>)}
-                            </select>
+                            <div className="flex space-x-2">
+                                <Select
+                                    id="tname"
+                                    name="tname"
+                                    className="mt-1 w-full text-sm"
+                                    classNamePrefix="select"
+                                    value={dropdowns.transporters.find((item) => item.value === formData.tname) ? 
+                                        { value: formData.tname, label: formData.tname } : null}
+                                    onChange={handleSelectChange}
+                                    options={dropdowns.transporters.map(item => ({
+                                        value: item.value,
+                                        label: item.value
+                                    }))}
+                                    placeholder="Select transporter..."
+                                    isSearchable
+                                    required
+                                />
+                                <button type="button" onClick={() => navigate('/master?tab=transporter')} className="text-primary hover:text-sky-700">+</button>
+                            </div>
                         </div>
 
                         {/* Supplier */}
@@ -213,17 +236,25 @@ const Dashboard: React.FC = () => {
                                 <label htmlFor="sname" className="block text-sm font-medium text-gray-700">Inward Details (Supplier)</label>
                                 <button type="button" onClick={() => navigate('/master?tab=supplier')} className="text-xs text-primary hover:underline font-bold">+ ADD</button>
                             </div>
-                            <select
-                                id="sname"
-                                name="sname"
-                                required
-                                value={formData.sname}
-                                onChange={handleChange}
-                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                            >
-                                <option value="">-- Select --</option>
-                                {dropdowns.suppliers.map(s => <option key={s.id} value={s.value}>{s.value}</option>)}
-                            </select>
+                            <div className="flex space-x-2">
+                                <Select
+                                    id="sname"
+                                    name="sname"
+                                    className="mt-1 w-full text-sm"
+                                    classNamePrefix="select"
+                                    value={dropdowns.suppliers.find((item) => item.value === formData.sname) ? 
+                                        { value: formData.sname, label: formData.sname } : null}
+                                    onChange={handleSelectChange}
+                                    options={dropdowns.suppliers.map(item => ({
+                                        value: item.value,
+                                        label: item.value
+                                    }))}
+                                    placeholder="Select supplier..."
+                                    isSearchable
+                                    required
+                                />
+                                <button type="button" onClick={() => navigate('/master?tab=supplier')} className="text-primary hover:text-sky-700">+</button>
+                            </div>
                         </div>
 
                         {/* Customer */}
@@ -232,17 +263,25 @@ const Dashboard: React.FC = () => {
                                 <label htmlFor="cname" className="block text-sm font-medium text-gray-700">Outward Details (Customer)</label>
                                 <button type="button" onClick={() => navigate('/master?tab=customer')} className="text-xs text-primary hover:underline font-bold">+ ADD</button>
                             </div>
-                            <select
-                                id="cname"
-                                name="cname"
-                                required
-                                value={formData.cname}
-                                onChange={handleChange}
-                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                            >
-                                <option value="">-- Select --</option>
-                                {dropdowns.customers.map(c => <option key={c.id} value={c.value}>{c.value}</option>)}
-                            </select>
+                            <div className="flex space-x-2">
+                                <Select
+                                    id="cname"
+                                    name="cname"
+                                    className="mt-1 w-full text-sm"
+                                    classNamePrefix="select"
+                                    value={dropdowns.customers.find((item) => item.value === formData.cname) ? 
+                                        { value: formData.cname, label: formData.cname } : null}
+                                    onChange={handleSelectChange}
+                                    options={dropdowns.customers.map(item => ({
+                                        value: item.value,
+                                        label: item.value
+                                    }))}
+                                    placeholder="Select customer..."
+                                    isSearchable
+                                    required
+                                />
+                                <button type="button" onClick={() => navigate('/master?tab=customer')} className="text-primary hover:text-sky-700">+</button>
+                            </div>
                         </div>
 
                         {/* Remarks */}
