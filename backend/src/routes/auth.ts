@@ -8,20 +8,156 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Helper function to generate API key
-function generateApiKey(): string {
+// Generate unique API key with collision detection
+async function generateUniqueApiKey(): Promise<string> {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+        let result = '';
+        for (let i = 0; i < 8; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        // Check if API key already exists
+        const existing = await db
+            .select()
+            .from(users)
+            .where(eq(users.apikey, result))
+            .limit(1);
+
+        if (existing.length === 0) {
+            return result; // Found unique key
+        }
+
+        attempts++;
     }
+
+    // If we can't find a unique key after 10 attempts, throw error
+    throw new Error('Unable to generate unique API key after multiple attempts');
+}
+
+// Helper to add a new user (used by register and potentially other endpoints)
+interface AddUserParams {
+    username: string;
+    password: string;
+    personName: string;
+    email: string;
+    mobile?: string;
+    rid?: number;
+    pid?: number;
+    comname?: string;
+    comadd?: string;
+    comnum?: string;
+    comail?: string;
+}
+
+async function addUser(params: AddUserParams) {
+    const {
+        username,
+        password,
+        personName,
+        email,
+        mobile = '',
+        rid,
+        pid,
+        comname,
+        comadd,
+        comnum,
+        comail,
+    } = params;
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate unique API key
+    const apikey = await generateUniqueApiKey();
+
+    // Insert new user
+    const result = await db.insert(users).values({
+        uname: username,
+        fname: personName,
+        email,
+        mobile,
+        pass: hashedPassword,
+        rid: typeof rid === 'number' ? rid : 1,
+        pid: typeof pid === 'number' ? pid : 1,
+        comname: comname || 'Default Company',
+        comadd: comadd || '',
+        comnum: comnum || '',
+        comail: comail || '',
+        apikey,
+        udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    });
     return result;
 }
 
+// AddUser endpoint (admin use)
+router.post('/addUser', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+    console.log('AddUser payload received:', req.body);
+    try {
+        const {
+            username,
+            password,
+            personName,
+            email,
+            mobile,
+            rid,
+            pid,
+            comname,
+            comadd,
+            comnum,
+            comail,
+            companyid,
+        } = req.body;
+        // Basic validation – ensure required fields are present
+        if (!username || !personName || !email || !password) {
+            res.status(400).json({ success: false, message: 'Missing required fields' });
+            return;
+        }
+        const result = await addUser({
+            username,
+            password,
+            personName,
+            email,
+            mobile,
+            rid,
+            pid,
+            comname,
+            comadd,
+            comnum,
+            comail,
+
+        });
+        res.status(201).json({
+            success: true,
+            message: 'User added successfully',
+            data: { id: result[0].insertId, username, email },
+        });
+    } catch (error) {
+        console.error('AddUser error:', error);
+        res.status(500).json({ success: false, message: 'Error adding user', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+});
+
 // Register endpoint
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
+    console.log('Register payload received:', req.body);
     try {
-        const { username, personName, email, mobile, password } = req.body;
+        const {
+            username,
+            password,
+            personName,
+            email,
+            mobile,
+            rid,
+            pid,
+            comname,
+            comadd,
+            comnum,
+            comail,
+            companyid,
+        } = req.body;
 
         // Validate required fields
         if (!username || !personName || !email || !password) {
@@ -62,25 +198,19 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insert new user
-        const apikey = generateApiKey();
-        const result = await db.insert(users).values({
-            uname: username,
-            fname: personName,
+        // Extracted user creation logic into a helper function
+        const result = await addUser({
+            username,
+            password,
+            personName,
             email,
-            mobile: mobile || '',
-            pass: hashedPassword,
-            rid: 1, // Default role
-            pid: 1, // Default privilege
-            comname: 'Default Company',
-            comadd: '',
-            comnum: '',
-            comail: '',
-            apikey: apikey,
-            udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+            mobile,
+            rid,
+            pid,
+            comname,
+            comadd,
+            comnum,
+            comail,
         });
 
         res.status(201).json({

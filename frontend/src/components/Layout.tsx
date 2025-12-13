@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import AddUserModal from './AddUserModal';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -8,6 +9,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const role = user.rid || 1; // Default to user role 1
     
@@ -172,19 +174,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {role === 2 && ( // Managers
                             <>
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
-                                <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>
-                                    <SubMenuItem to="/rdash" label="DASHBOARD REPORT" />
-                                    <SubMenuItem to="/cust" label="CUSTOM REPORT" />
-                                    <SubMenuItem to="/print" label="PRINT" />
-                                    <SubMenuItem to="/status" label="STATUS" />
-                                    <SubMenuItem to="/logs" label="LOGS" />
-                                </MenuItem>
-                                <MenuItem label="MASTER DATA" isDropdown icon={Icons.Config}>
-                                    <SubMenuItem to="/customers" label="CUSTOMERS" />
-                                    <SubMenuItem to="/materials" label="MATERIALS" />
-                                    <SubMenuItem to="/suppliers" label="SUPPLIERS" />
-                                    <SubMenuItem to="/transporters" label="TRANSPORTERS" />
-                                </MenuItem>
                                 <MenuItem label="CONFIG" isDropdown icon={Icons.Config}>
                                     <SubMenuItem to="/employees" label="USERS" />
                                     <SubMenuItem to="/setting" label="SETTING" />
@@ -196,52 +185,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <>
                                 <MenuItem to="/entry" label="ENTRY" icon={Icons.Entry} />
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
-                                <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>
-                                    <SubMenuItem to="/rdash" label="DASHBOARD" />
-                                    <SubMenuItem to="/ddash" label="DEPARTMENT WISE" />
-                                    <SubMenuItem to="/mdash" label="MACHINE WISE" />
-                                    <SubMenuItem to="/sdash" label="SHIFT WISE" />
-                                    <SubMenuItem to="/edash" label="ATTENDEE WISE" />
-                                    <SubMenuItem to="/mcomp" label="COMPLETED" />
-                                    <SubMenuItem to="/mpend" label="PENDING" />
-                                    <SubMenuItem to="/cust" label="CUSTOM REPORT" />
-                                    <SubMenuItem to="/logs" label="LOGS" />
-                                    <SubMenuItem to="/employees" label="USERS" />
-                                </MenuItem>
                             </>
                         )}
 
                         {role === 1 && ( // Admin (assuming admin is rid=1)
                             <>
-                                <MenuItem label="INT. WEIGHMENT" isDropdown icon={Icons.WeighIn}>
-                                    <SubMenuItem to="/int/weighin" label="FIRST WEIGHMENT" />
-                                    <SubMenuItem to="/int/weighout" label="SECOND WEIGHMENT" />
-                                </MenuItem>
-                                <MenuItem label="EXT. WEIGHMENT" isDropdown icon={Icons.WeighOut}>
-                                    <SubMenuItem to="/ext/weighin" label="FIRST WEIGHMENT" />
-                                    <SubMenuItem to="/ext/weighout" label="SECOND WEIGHMENT" />
-                                    <SubMenuItem to="/sweigh" label="SINGLE WEIGHMENT" />
-                                </MenuItem>
-                                <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>
-                                    <SubMenuItem to="/rdash" label="DASHBOARD REPORT" />
-                                    <SubMenuItem to="/ddash" label="DEPARTMENT WISE" />
-                                    <SubMenuItem to="/mdash" label="MACHINE WISE" />
-                                    <SubMenuItem to="/sdash" label="SHIFT WISE" />
-                                    <SubMenuItem to="/edash" label="ATTENDEE WISE" />
-                                    <SubMenuItem to="/mcomp" label="COMPLETED" />
-                                    <SubMenuItem to="/mpend" label="PENDING" />
-                                    <SubMenuItem to="/cust" label="CUSTOM REPORT" />
-                                    <SubMenuItem to="/logs" label="LOGS" />
-                                    <SubMenuItem to="/employees" label="USERS" />
-                                    <SubMenuItem to="/dept" label="DEPARTMENT" />
-                                </MenuItem>
-                                <MenuItem label="CREATE" isDropdown icon={Icons.Create}>
-                                    <SubMenuItem to="/dept" label="DEPARTMENT" />
-                                    <SubMenuItem to="/mdetail" label="MACHINE DETAIL" />
-                                    <SubMenuItem to="/nop" label="NATURE OF PROBLEM" />
-                                    <SubMenuItem to="/shifts" label="SHIFTS" />
-                                    <SubMenuItem to="/registration" label="USER" />
-                                </MenuItem>
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
                             </>
                         )}
@@ -251,10 +199,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <>
                                 <MenuItem to="/dashboard" label="WEIGH IN" icon={Icons.WeighIn} />
                                 <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
-                                <MenuItem label="REPORTS" isDropdown icon={Icons.Reports}>
-                                    <SubMenuItem to="/rdash" label="DASHBOARD REPORT" />
-                                    <SubMenuItem to="/cust" label="CUSTOM REPORT" />
-                                </MenuItem>
                                 <MenuItem to="/master-data" label="MASTER DATA" icon={Icons.Config} />
                             </>
                         )}
@@ -305,6 +249,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     <div className="text-sm font-medium text-gray-900">{user.username}</div>
                                     <div className="text-xs text-gray-500">{role === 1 ? 'Admin' : role === 2 ? 'Manager' : 'User'}</div>
                                 </div>
+                                {role === 1 && (
+                                    <button
+                                        onClick={() => { setIsAddUserModalOpen(true); setIsUserMenuOpen(false); }}
+                                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        Add User
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => { navigate('/cpwd'); setIsUserMenuOpen(false); }}
                                     className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -327,6 +279,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {children}
                 </main>
             </div>
+            
+            {/* Add User Modal */}
+            <AddUserModal 
+                isOpen={isAddUserModalOpen} 
+                onClose={() => setIsAddUserModalOpen(false)} 
+            />
         </div>
     );
 };

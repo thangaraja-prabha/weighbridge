@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { masterApi } from '../api/master';
+import { userApi } from '../services/user';
 import { authApi } from '../api/auth';
 
 const Users: React.FC = () => {
@@ -26,7 +26,7 @@ const Users: React.FC = () => {
     const loadUsers = async () => {
         setLoading(true);
         try {
-            const res = await masterApi.getUsers(search);
+            const res = await userApi.getUsers(1, 10);
             setUsers(res?.data || []);
         } catch (err) {
             console.error(err);

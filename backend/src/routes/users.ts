@@ -48,4 +48,40 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
+// Get Roles
+router.get('/roles', async (req: Request, res: Response) => {
+    try {
+        const roles = [
+            { id: 1, name: 'Admin', description: 'Full system access' },
+            { id: 2, name: 'Manager', description: 'Can manage users and operations' },
+            { id: 3, name: 'User', description: 'Limited access to specific functions' }
+        ];
+        
+        res.json({
+            success: true,
+            data: roles
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Privileges
+router.get('/privileges', async (req: Request, res: Response) => {
+    try {
+        const privileges = [
+            { id: 1, name: 'Full Access', description: 'Complete system access' },
+            { id: 2, name: 'Read Only', description: 'Can view data but cannot modify' },
+            { id: 3, name: 'Limited Access', description: 'Restricted access to specific features' }
+        ];
+        
+        res.json({
+            success: true,
+            data: privileges
+        });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;

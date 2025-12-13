@@ -36,34 +36,4 @@ export const dashboardApi = {
         return data.weight;
     },
 
-    getDropdowns: async (): Promise<DropdownData> => {
-        const response = await fetch(`${API_URL}/dashboard/dropdowns`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        return data.data;
-    },
-
-    submitWeighIn: async (payload: WeighInPayload) => {
-        const response = await fetch(`${API_URL}/dashboard/weigh-in`, {
-            method: 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        return data;
-    },
-
-    getNextTicketNo: async (): Promise<number> => {
-        const response = await fetch(`${API_URL}/dashboard/next-ticket`, {
-            method: 'GET',
-            headers: getHeaders(),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
-        return data.ticketBox;
-    }
-};
+} 

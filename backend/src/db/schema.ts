@@ -6,6 +6,36 @@ const longtext = customType<{ data: string }>({
     },
 });
 
+const apiKey = customType<{ data: string }>({
+    dataType() {
+        return "varchar(8)";
+    },
+    toDriver(value: unknown): string {
+        return typeof value === 'string' ? value : String(value || '');
+    },
+    fromDriver(value: unknown): string {
+        return typeof value === 'string' ? value : String(value || '');
+    },
+});
+
+// Generate 8-character alphanumeric uppercase API key
+function generateApiKey(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+// Get current time in Indian Standard Time (IST)
+function getCurrentIndiaTime(): string {
+    const now = new Date();
+    // Convert to IST (UTC+5:30)
+    const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000) + (now.getTimezoneOffset() * 60 * 1000));
+    return istTime.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 export const users = mysqlTable('users', {
     id: int('id').primaryKey().autoincrement(),
     uname: varchar('uname', { length: 30 }).notNull(),
@@ -13,14 +43,14 @@ export const users = mysqlTable('users', {
     fname: varchar('fname', { length: 30 }),
     email: varchar('email', { length: 50 }),
     mobile: varchar('mobile', { length: 30 }),
-    rid: int('rid'),
-    pid: int('pid'),
+    rid: int('rid'),          // role id
+    pid: int('pid'),          // privilege id
     comname: varchar('comname', { length: 50 }),
     comadd: text('comadd'),
-    comnum: varchar('comnum', { length: 20 }).notNull(),
-    comail: varchar('comail', { length: 30 }).notNull(),
-    apikey: varchar('apikey', { length: 8 }).notNull(),
-    udt: varchar('udt', { length: 20 })
+    comnum: varchar('comnum', { length: 30 }),
+    comail: varchar('comail', { length: 30 }),
+    apikey: apiKey('apikey').notNull().unique().$defaultFn(() => generateApiKey()),
+    udt: varchar('udt', { length: 20 }).$defaultFn(() => getCurrentIndiaTime()),
 });
 
 export const wlog = mysqlTable('wlog', {

@@ -10,9 +10,14 @@ export interface RegisterData {
     password: string;
     personName: string;
     email: string;
-    mobile: string;
-    rights: string;
-    smsOpt: string;
+    mobile?: string;
+    rid?: number;          // role id
+    pid?: number;          // privilege id
+    comname?: string;
+    comadd?: string;
+    comnum?: string;
+    comail?: string;
+    companyid?: number;
 }
 
 export const authApi = {

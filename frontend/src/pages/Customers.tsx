@@ -4,13 +4,13 @@ import Layout from '../components/Layout';
 
 const Customers: React.FC = () => {
   const columns = [
-    { key: 'id', label: 'ID', type: 'number' },
+    { key: 'id', label: 'ID', type: 'number' as const },
     { key: 'cname', label: 'Customer Name' },
     { key: 'cadd', label: 'Address' },
     { key: 'cnum', label: 'Phone Number' },
     { key: 'crem', label: 'Remarks' },
     { key: 'apikey', label: 'API Key' },
-    { key: 'udt', label: 'Updated Date', type: 'date' }
+    { key: 'udt', label: 'Updated Date', type: 'date' as const }
   ];
 
   return (

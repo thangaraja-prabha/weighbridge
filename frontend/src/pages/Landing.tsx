@@ -85,19 +85,19 @@ const Landing: React.FC = () => {
                     <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-3xl"></div>
                     <div className="absolute top-[30%] right-[0%] w-[35%] h-[35%] rounded-full bg-secondary/5 blur-3xl"></div>
                 </div>
-                
+
                 <div className="relative max-w-7xl mx-auto text-center">
                     <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
                         Professional <span className="text-primary">Weighbridge</span> Management
                     </h1>
                     <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                        Streamline your weighing operations with our comprehensive digital solution. 
+                        Streamline your weighing operations with our comprehensive digital solution.
                         Track, manage, and analyze all your weighment data in one powerful platform.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <button
-                            onClick={() => navigate('/login')}
-                            className="px-8 py-4 bg-primary text-white font-semibold rounded-lg hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 shadow-lg"
+                            onClick={() => navigate('/register')}
+                            className="ml-4 px-8 py-4 bg-secondary text-white font-semibold rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-all duration-200 shadow-lg"
                         >
                             Get Started Now
                         </button>
@@ -119,7 +119,7 @@ const Landing: React.FC = () => {
                             Built for efficiency, designed for simplicity, trusted by industry leaders.
                         </p>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -128,7 +128,7 @@ const Landing: React.FC = () => {
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">Lightning Fast</h3>
                             <p className="text-gray-600">Process weighments in seconds with our optimized workflow and intuitive interface.</p>
                         </div>
-                        
+
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <span className="text-2xl">📈</span>
@@ -136,7 +136,7 @@ const Landing: React.FC = () => {
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">Advanced Analytics</h3>
                             <p className="text-gray-600">Get detailed insights and reports to make data-driven decisions for your business.</p>
                         </div>
-                        
+
                         <div className="text-center p-6">
                             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <span className="text-2xl">🔒</span>
@@ -159,16 +159,15 @@ const Landing: React.FC = () => {
                             Choose the perfect plan for your business. No hidden fees, no surprises.
                         </p>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                         {pricingPlans.map((plan, index) => (
                             <div
                                 key={index}
-                                className={`relative bg-white rounded-2xl shadow-lg p-8 ${
-                                    plan.popular
-                                        ? 'ring-2 ring-primary transform scale-105'
-                                        : 'border border-gray-200'
-                                }`}
+                                className={`relative bg-white rounded-2xl shadow-lg p-8 ${plan.popular
+                                    ? 'ring-2 ring-primary transform scale-105'
+                                    : 'border border-gray-200'
+                                    }`}
                             >
                                 {plan.popular && (
                                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -177,7 +176,7 @@ const Landing: React.FC = () => {
                                         </span>
                                     </div>
                                 )}
-                                
+
                                 <div className="text-center mb-6">
                                     <div className="text-4xl mb-4">{plan.icon}</div>
                                     <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
@@ -187,7 +186,7 @@ const Landing: React.FC = () => {
                                         <span className="text-gray-600 ml-1">{plan.period}</span>
                                     </div>
                                 </div>
-                                
+
                                 <ul className="space-y-3 mb-8">
                                     {plan.features.map((feature, featureIndex) => (
                                         <li key={featureIndex} className="flex items-start">
@@ -206,14 +205,13 @@ const Landing: React.FC = () => {
                                         </li>
                                     ))}
                                 </ul>
-                                
+
                                 <button
                                     onClick={() => navigate('/login')}
-                                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-                                        plan.popular
-                                            ? 'bg-primary text-white hover:bg-sky-600'
-                                            : 'bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300'
-                                    }`}
+                                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${plan.popular
+                                        ? 'bg-primary text-white hover:bg-sky-600'
+                                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300'
+                                        }`}
                                 >
                                     {plan.name === 'Enterprise' ? 'Contact Sales' : 'Get Started'}
                                 </button>
