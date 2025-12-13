@@ -8,7 +8,7 @@ export interface AuthRequest extends Request {
         fname: string;
         apikey: string;
         rid: number;
-        pid: number;
+        pid: number | number[]; // Support both for backward compatibility
     };
 }
 
@@ -39,7 +39,7 @@ export const authMiddleware = (
             fname: string;
             apikey: string;
             rid: number;
-            pid: number;
+            pid: number | number[]; // Support both for backward compatibility
         };
 
         // Attach user to request

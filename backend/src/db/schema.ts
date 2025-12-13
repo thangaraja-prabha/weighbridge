@@ -175,6 +175,16 @@ export const privillages = mysqlTable('privillages', {
     udt: varchar('udt', { length: 20 }).notNull()
 });
 
+// Junction table for user-privilege many-to-many relationship
+export const user_privileges = mysqlTable('user_privileges', {
+    id: int('id').primaryKey().autoincrement(),
+    user_id: int('user_id').notNull(),
+    privilege_id: int('privilege_id').notNull(),
+    apikey: varchar('apikey', { length: 10 }).notNull(),
+    uid: int('uid').notNull(),
+    udt: varchar('udt', { length: 20 }).notNull()
+});
+
 export const ulog = mysqlTable('ulog', {
     id: int('id').primaryKey().autoincrement(),
     login_dt: varchar('login_dt', { length: 20 }),

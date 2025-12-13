@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { users } from '../db/schema';
+import { users, user_privileges } from '../db/schema';
 import { not, eq, like, or, and, sql } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
@@ -43,7 +43,7 @@ router.get('/', async (req: Request, res: Response) => {
             mobile: users.mobile,
             apikey: users.apikey,
             rid: users.rid,
-            pid: users.pid,
+            pid: users.pid, // Keep for backward compatibility
             role: roles.role,
             privilege: privillages.privil,
             comname: users.comname,
@@ -58,7 +58,34 @@ router.get('/', async (req: Request, res: Response) => {
             .limit(limit)
             .offset(offset);
 
-        res.json(createPaginatedResponse(result, total, page, limit));
+        // Fetch privileges for each user from user_privileges table
+        const userIds = result.map(u => u.id);
+        const privilegesMap = new Map<number, number[]>();
+
+        if (userIds.length > 0) {
+            const privilegesResult = await db
+                .select({
+                    user_id: user_privileges.user_id,
+                    privilege_id: user_privileges.privilege_id
+                })
+                .from(user_privileges)
+                .where(sql`${user_privileges.user_id} IN (${sql.join(userIds.map(id => sql`${id}`), sql`, `)})`);
+
+            privilegesResult.forEach(p => {
+                if (!privilegesMap.has(p.user_id)) {
+                    privilegesMap.set(p.user_id, []);
+                }
+                privilegesMap.get(p.user_id)!.push(p.privilege_id);
+            });
+        }
+
+        // Map results with privilege arrays
+        const mappedResult = result.map(user => ({
+            ...user,
+            privileges: privilegesMap.get(user.id) || (user.pid ? [user.pid] : []) // Fallback to old pid
+        }));
+
+        res.json(createPaginatedResponse(mappedResult, total, page, limit));
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     }

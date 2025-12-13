@@ -2,8 +2,8 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../db';
-import { users } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { users, user_privileges } from '../db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -46,7 +46,7 @@ interface AddUserParams {
     email: string;
     mobile?: string;
     rid?: number;
-    pid?: number;
+    pid?: number | number[]; // Support both single and multiple privileges
     comname?: string;
     comadd?: string;
     comnum?: string;
@@ -72,6 +72,7 @@ async function addUser(params: AddUserParams) {
     const hashedPassword = await bcrypt.hash(password, 10);
     // Generate unique API key
     const apikey = await generateUniqueApiKey();
+    const currentTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     // Insert new user
     const result = await db.insert(users).values({
@@ -81,14 +82,30 @@ async function addUser(params: AddUserParams) {
         mobile,
         pass: hashedPassword,
         rid: rid ? Number(rid) : 1,
-        pid: pid ? Number(pid) : 1,
+        pid: Array.isArray(pid) && pid.length > 0 ? pid[0] : (pid ? Number(pid) : 1), // Keep first privilege for backward compatibility
         comname: comname || '',
         comadd: comadd || '',
         comnum: comnum || '',
         comail: comail || '',
         apikey,
-        udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        udt: currentTime,
     });
+
+    const userId = result[0].insertId;
+
+    // Insert privileges into user_privileges table
+    const privilegeIds = Array.isArray(pid) ? pid : (pid ? [Number(pid)] : [1]);
+    if (privilegeIds.length > 0) {
+        const privilegeRecords = privilegeIds.map(privilegeId => ({
+            user_id: userId,
+            privilege_id: privilegeId,
+            apikey,
+            uid: userId,
+            udt: currentTime
+        }));
+        await db.insert(user_privileges).values(privilegeRecords);
+    }
+
     return result;
 }
 
@@ -303,6 +320,17 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        // Fetch user privileges from user_privileges table
+        const userPrivilegesResult = await db
+            .select({ privilege_id: user_privileges.privilege_id })
+            .from(user_privileges)
+            .where(eq(user_privileges.user_id, user.id));
+
+        // Extract privilege IDs as array, fallback to old pid if no records found
+        const privilegeIds = userPrivilegesResult.length > 0
+            ? userPrivilegesResult.map(p => p.privilege_id)
+            : (user.pid ? [user.pid] : []);
+
         // Generate JWT token
         const jwtSecret = process.env.JWT_SECRET || 'default-secret-key';
         const token = jwt.sign(
@@ -312,7 +340,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
                 fname: user.fname,
                 apikey: user.apikey,
                 rid: user.rid,
-                pid: user.pid,
+                pid: privilegeIds, // Now an array
             },
             jwtSecret,
             { expiresIn: '24h' }
@@ -331,7 +359,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
                     mobile: user.mobile,
                     apikey: user.apikey,
                     rid: user.rid,
-                    pid: user.pid,
+                    pid: privilegeIds, // Now an array
                 },
             },
         });
@@ -386,9 +414,25 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
             return;
         }
 
+        const userData = userResult[0];
+
+        // Fetch user privileges from user_privileges table
+        const userPrivilegesResult = await db
+            .select({ privilege_id: user_privileges.privilege_id })
+            .from(user_privileges)
+            .where(eq(user_privileges.user_id, userData.id));
+
+        // Extract privilege IDs as array, fallback to old pid if no records found
+        const privilegeIds = userPrivilegesResult.length > 0
+            ? userPrivilegesResult.map(p => p.privilege_id)
+            : (userData.pid ? [userData.pid] : []);
+
         res.json({
             success: true,
-            data: userResult[0],
+            data: {
+                ...userData,
+                pid: privilegeIds, // Return as array
+            },
         });
     } catch (error) {
         console.error('Get user error:', error);
