@@ -9,6 +9,8 @@ const router = Router();
 
 router.use(authMiddleware);
 
+import { roles, privillages } from '../db/schema';
+
 // Get Users (exclude Admins)
 router.get('/', async (req: Request, res: Response) => {
     try {
@@ -31,6 +33,8 @@ router.get('/', async (req: Request, res: Response) => {
         // @ts-ignore
         const total = Number(countResult[0].count);
 
+        // Perform Left Joins manually or select all and map if not using relations API
+        // For Drizzle standard query builder:
         const result = await db.select({
             id: users.id,
             username: users.uname,
@@ -39,8 +43,20 @@ router.get('/', async (req: Request, res: Response) => {
             mobile: users.mobile,
             apikey: users.apikey,
             rid: users.rid,
-            pid: users.pid
-        }).from(users).where(whereClause).limit(limit).offset(offset);
+            pid: users.pid,
+            role: roles.role,
+            privilege: privillages.privil,
+            comname: users.comname,
+            comadd: users.comadd,
+            comnum: users.comnum,
+            comail: users.comail
+        })
+            .from(users)
+            .leftJoin(roles, eq(users.rid, roles.id))
+            .leftJoin(privillages, eq(users.pid, privillages.id))
+            .where(whereClause)
+            .limit(limit)
+            .offset(offset);
 
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) {
@@ -51,15 +67,16 @@ router.get('/', async (req: Request, res: Response) => {
 // Get Roles
 router.get('/roles', async (req: Request, res: Response) => {
     try {
-        const roles = [
-            { id: 1, name: 'Admin', description: 'Full system access' },
-            { id: 2, name: 'Manager', description: 'Can manage users and operations' },
-            { id: 3, name: 'User', description: 'Limited access to specific functions' }
-        ];
-        
+        const rolesData = await db.select().from(roles);
+        const mappedRoles = rolesData.map(r => ({
+            id: r.id,
+            name: r.role,
+            description: '' // DB doesn't have description currently
+        }));
+
         res.json({
             success: true,
-            data: roles
+            data: mappedRoles
         });
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -69,15 +86,16 @@ router.get('/roles', async (req: Request, res: Response) => {
 // Get Privileges
 router.get('/privileges', async (req: Request, res: Response) => {
     try {
-        const privileges = [
-            { id: 1, name: 'Full Access', description: 'Complete system access' },
-            { id: 2, name: 'Read Only', description: 'Can view data but cannot modify' },
-            { id: 3, name: 'Limited Access', description: 'Restricted access to specific features' }
-        ];
-        
+        const privilegesData = await db.select().from(privillages);
+        const mappedPrivileges = privilegesData.map(p => ({
+            id: p.id,
+            name: p.privil,
+            description: ''
+        }));
+
         res.json({
             success: true,
-            data: privileges
+            data: mappedPrivileges
         });
     } catch (err: any) {
         res.status(500).json({ error: err.message });

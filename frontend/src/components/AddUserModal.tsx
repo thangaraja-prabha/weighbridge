@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import toast from 'react-hot-toast';
-import { userApi, Role, Privilege } from '../services/user';
+import { userApi, Role, Privilege } from '../api/user';
 
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
+  user?: any;
 }
 
 interface FormData {
@@ -15,13 +16,12 @@ interface FormData {
   email: string;
   mobile: string;
   rid: number;
-  pid: number[];
+  pid: number;
   comname: string;
   comadd: string;
 }
 
-const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
-  const navigate = useNavigate();
+const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) => {
   const [formData, setFormData] = useState<FormData>({
     uname: '',
     pass: '',
@@ -29,7 +29,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
     email: '',
     mobile: '',
     rid: 1,
-    pid: [1],
+    pid: 1,
     comname: '',
     comadd: ''
   });
@@ -54,24 +54,34 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
 
     if (isOpen) {
       fetchRolesAndPrivileges();
+      if (user) {
+        setFormData({
+          uname: user.username || '',
+          pass: '', // Don't populate password
+          fname: user.empname || user.username || '',
+          email: user.email || '',
+          mobile: user.mobile || '',
+          rid: user.rid || 1,
+          pid: user.pid || 1,
+          comname: user.comname || '',
+          comadd: user.comadd || ''
+        });
+      } else {
+        // Reset form for new user
+        setFormData({
+          uname: '', pass: '', fname: '', email: '', mobile: '',
+          rid: 1, pid: 1, comname: '', comadd: ''
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'rid' ? parseInt(value) : value
-    }));
-  };
-
-  const handlePrivilegeChange = (pid: number, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      pid: checked 
-        ? [...prev.pid, pid]
-        : prev.pid.filter(id => id !== pid)
+      [name]: (name === 'rid' || name === 'pid') ? parseInt(value) : value
     }));
   };
 
@@ -80,35 +90,35 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
 
     try {
-      const data = await userApi.createUser({
-        ...formData,
-        comnum: 'DEFAULT',
-        comail: 'default@company.com'
-      });
+      let data;
+      if (user) {
+        // Update existing user
+        data = await userApi.updateUser(user.id, {
+          ...formData,
+          // Only send password if it's not empty, assuming backend handles that. 
+          // If backend requires password always, then we must strictly validate.
+          // For now sending as is.
+        });
+      } else {
+        // Create new user
+        data = await userApi.createUser({
+          ...formData,
+          comnum: 'DEFAULT', // Start with default, backend will overwrite if using /addUser logic but let's keep consistent
+          comail: 'default@company.com'
+        });
+      }
 
       if (data.success) {
-        toast.success('User created successfully!');
+        toast.success(user ? 'User updated successfully!' : 'User created successfully!');
         setTimeout(() => {
           onClose();
-          setFormData({
-            uname: '',
-            pass: '',
-            fname: '',
-            email: '',
-            mobile: '',
-            rid: 1,
-            pid: [1],
-            comname: '',
-            comadd: ''
-          });
-          // Navigate to user listing page
-          navigate('/employees');
+          // Navigate/refresh is handled by parent reloading
         }, 1000);
       } else {
-        toast.error(data.message || 'Failed to create user');
+        toast.error(data.message || (user ? 'Failed to update user' : 'Failed to create user'));
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create user');
+      toast.error(err.message || (user ? 'Failed to update user' : 'Failed to create user'));
     } finally {
       setLoading(false);
     }
@@ -120,7 +130,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Add New User</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{user ? 'Edit User' : 'Add New User'}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-4">
@@ -152,6 +162,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
                 placeholder="Enter password"
               />
+              {user && <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password</p>}
             </div>
 
             {/* Full Name */}
@@ -239,19 +250,21 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
 
             {/* Privileges */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Privileges</label>
-              <div className="space-y-2">
-                {privileges.map(privilege => (
-                  <label key={privilege.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.pid.includes(privilege.id)}
-                      onChange={(e) => handlePrivilegeChange(privilege.id, e.target.checked)}
-                      className="mr-2 border-gray-300 rounded text-primary focus:ring-primary"
-                    />
-                    <span className="text-sm text-gray-700">{privilege.name}</span>
-                  </label>
-                ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Privilege *</label>
+                <select
+                  name="pid"
+                  value={formData.pid}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
+                >
+                  {privileges.map(privilege => (
+                    <option key={privilege.id} value={privilege.id}>
+                      {privilege.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -269,7 +282,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
               disabled={loading}
               className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create User'}
+              {loading ? (user ? 'Updating...' : 'Creating...') : (user ? 'Update User' : 'Create User')}
             </button>
           </div>
         </form>

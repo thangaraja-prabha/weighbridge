@@ -80,9 +80,9 @@ async function addUser(params: AddUserParams) {
         email,
         mobile,
         pass: hashedPassword,
-        rid: typeof rid === 'number' ? rid : 1,
-        pid: typeof pid === 'number' ? pid : 1,
-        comname: comname || 'Default Company',
+        rid: rid ? Number(rid) : 1,
+        pid: pid ? Number(pid) : 1,
+        comname: comname || '',
         comadd: comadd || '',
         comnum: comnum || '',
         comail: comail || '',
@@ -93,28 +93,57 @@ async function addUser(params: AddUserParams) {
 }
 
 // AddUser endpoint (admin use)
-router.post('/addUser', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.post('/addUser', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
     console.log('AddUser payload received:', req.body);
     try {
         const {
-            username,
-            password,
-            personName,
+            uname, // Frontend sends uname
+            pass,  // Frontend sends pass
+            fname, // Frontend sends fname
             email,
             mobile,
             rid,
             pid,
-            comname,
-            comadd,
-            comnum,
-            comail,
-            companyid,
+            // comname, comadd, etc ignored from body - strictly inherit from admin
         } = req.body;
+
+        const username = uname;
+        const password = pass;
+        const personName = fname;
+
         // Basic validation – ensure required fields are present
         if (!username || !personName || !email || !password) {
-            res.status(400).json({ success: false, message: 'Missing required fields' });
+            const missingFields = [];
+            if (!username) missingFields.push('username (uname)');
+            if (!personName) missingFields.push('personName (fname)');
+            if (!email) missingFields.push('email');
+            if (!password) missingFields.push('password (pass)');
+
+            res.status(400).json({
+                success: false,
+                message: `Missing required fields: ${missingFields.join(', ')}`
+            });
             return;
         }
+
+        // Fetch the admin user (the one making the request) to get company details
+        if (!req.user || !req.user.id) {
+            res.status(401).json({ success: false, message: 'Unauthorized: Admin ID not found' });
+            return;
+        }
+
+        const adminUser = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, req.user.id))
+            .limit(1);
+
+        if (adminUser.length === 0) {
+            res.status(404).json({ success: false, message: 'Admin user record not found' });
+            return;
+        }
+        const admin = adminUser[0];
+
         const result = await addUser({
             username,
             password,
@@ -123,12 +152,12 @@ router.post('/addUser', authMiddleware, async (req: Request, res: Response): Pro
             mobile,
             rid,
             pid,
-            comname,
-            comadd,
-            comnum,
-            comail,
-
+            comname: admin.comname || '',
+            comadd: admin.comadd || '',
+            comnum: admin.comnum || '',
+            comail: admin.comail || '',
         });
+
         res.status(201).json({
             success: true,
             message: 'User added successfully',

@@ -45,7 +45,7 @@ export const userApi = {
 
     // Create user
     createUser: async (userData: any) => {
-        const response = await fetch(`${API_URL}/auth/register`, {
+        const response = await fetch(`${API_URL}/auth/adduser`, {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify(userData),
@@ -55,7 +55,7 @@ export const userApi = {
         return data;
     },
 
-    
+
     // Get all users
     getUsers: async (page = 1, limit = 10) => {
         const response = await fetch(`${API_URL}/users?page=${page}&limit=${limit}`, {
