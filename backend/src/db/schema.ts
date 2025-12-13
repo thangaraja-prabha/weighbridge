@@ -44,7 +44,8 @@ export const users = mysqlTable('users', {
     email: varchar('email', { length: 50 }),
     mobile: varchar('mobile', { length: 30 }),
     rid: int('rid'),          // role id
-    pid: int('pid'),          // privilege id
+    pid: int('pid'),          // privilege id (deprecated, use privilege_ids)
+    privilege_ids: json('privilege_ids').$type<number[]>(), // Array of privilege IDs
     comname: varchar('comname', { length: 50 }),
     comadd: text('comadd'),
     comnum: varchar('comnum', { length: 30 }),
@@ -161,28 +162,12 @@ export const modes = mysqlTable('modes', {
 
 export const roles = mysqlTable('roles', {
     id: int('id').primaryKey().autoincrement(),
-    role: varchar('role', { length: 20 }),
-    apikey: varchar('apikey', { length: 10 }).notNull(),
-    uid: int('uid').notNull(),
-    udt: varchar('udt', { length: 20 }).notNull()
+    role: varchar('role', { length: 20 })
 });
 
 export const privillages = mysqlTable('privillages', {
     id: int('id').primaryKey().autoincrement(),
-    privil: varchar('privil', { length: 20 }).notNull(),
-    apikey: varchar('apikey', { length: 10 }).notNull(),
-    uid: int('uid').notNull(),
-    udt: varchar('udt', { length: 20 }).notNull()
-});
-
-// Junction table for user-privilege many-to-many relationship
-export const user_privileges = mysqlTable('user_privileges', {
-    id: int('id').primaryKey().autoincrement(),
-    user_id: int('user_id').notNull(),
-    privilege_id: int('privilege_id').notNull(),
-    apikey: varchar('apikey', { length: 10 }).notNull(),
-    uid: int('uid').notNull(),
-    udt: varchar('udt', { length: 20 }).notNull()
+    privil: varchar('privil', { length: 20 }).notNull()
 });
 
 export const ulog = mysqlTable('ulog', {

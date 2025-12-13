@@ -2,8 +2,8 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../db';
-import { users, user_privileges } from '../db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { users } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -51,6 +51,7 @@ interface AddUserParams {
     comadd?: string;
     comnum?: string;
     comail?: string;
+    apikey?: string; // Optional: if provided, use it; otherwise generate new one
 }
 
 async function addUser(params: AddUserParams) {
@@ -66,13 +67,17 @@ async function addUser(params: AddUserParams) {
         comadd,
         comnum,
         comail,
+        apikey: providedApiKey, // Rename to avoid confusion
     } = params;
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Generate unique API key
-    const apikey = await generateUniqueApiKey();
+    // Use provided API key or generate a new unique one
+    const apikey = providedApiKey || await generateUniqueApiKey();
     const currentTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    // Convert pid to array format
+    const privilegeIds = Array.isArray(pid) ? pid : (pid ? [Number(pid)] : [1]);
 
     // Insert new user
     const result = await db.insert(users).values({
@@ -82,7 +87,8 @@ async function addUser(params: AddUserParams) {
         mobile,
         pass: hashedPassword,
         rid: rid ? Number(rid) : 1,
-        pid: Array.isArray(pid) && pid.length > 0 ? pid[0] : (pid ? Number(pid) : 1), // Keep first privilege for backward compatibility
+        pid: privilegeIds[0], // Keep first privilege for backward compatibility
+        privilege_ids: privilegeIds, // Store as JSON array
         comname: comname || '',
         comadd: comadd || '',
         comnum: comnum || '',
@@ -90,21 +96,6 @@ async function addUser(params: AddUserParams) {
         apikey,
         udt: currentTime,
     });
-
-    const userId = result[0].insertId;
-
-    // Insert privileges into user_privileges table
-    const privilegeIds = Array.isArray(pid) ? pid : (pid ? [Number(pid)] : [1]);
-    if (privilegeIds.length > 0) {
-        const privilegeRecords = privilegeIds.map(privilegeId => ({
-            user_id: userId,
-            privilege_id: privilegeId,
-            apikey,
-            uid: userId,
-            udt: currentTime
-        }));
-        await db.insert(user_privileges).values(privilegeRecords);
-    }
 
     return result;
 }
@@ -173,6 +164,7 @@ router.post('/addUser', authMiddleware, async (req: AuthRequest, res: Response):
             comadd: admin.comadd || '',
             comnum: admin.comnum || '',
             comail: admin.comail || '',
+            apikey: admin.apikey, // Inherit admin's apikey
         });
 
         res.status(201).json({
@@ -320,16 +312,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Fetch user privileges from user_privileges table
-        const userPrivilegesResult = await db
-            .select({ privilege_id: user_privileges.privilege_id })
-            .from(user_privileges)
-            .where(eq(user_privileges.user_id, user.id));
-
-        // Extract privilege IDs as array, fallback to old pid if no records found
-        const privilegeIds = userPrivilegesResult.length > 0
-            ? userPrivilegesResult.map(p => p.privilege_id)
-            : (user.pid ? [user.pid] : []);
+        // Get privilege IDs from privilege_ids column, fallback to old pid
+        const privilegeIds = user.privilege_ids || (user.pid ? [user.pid] : []);
 
         // Generate JWT token
         const jwtSecret = process.env.JWT_SECRET || 'default-secret-key';
@@ -401,6 +385,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
                 apikey: users.apikey,
                 rid: users.rid,
                 pid: users.pid,
+                privilege_ids: users.privilege_ids, // Add privilege_ids
             })
             .from(users)
             .where(eq(users.id, req.user.id))
@@ -416,16 +401,8 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
 
         const userData = userResult[0];
 
-        // Fetch user privileges from user_privileges table
-        const userPrivilegesResult = await db
-            .select({ privilege_id: user_privileges.privilege_id })
-            .from(user_privileges)
-            .where(eq(user_privileges.user_id, userData.id));
-
-        // Extract privilege IDs as array, fallback to old pid if no records found
-        const privilegeIds = userPrivilegesResult.length > 0
-            ? userPrivilegesResult.map(p => p.privilege_id)
-            : (userData.pid ? [userData.pid] : []);
+        // Get privilege IDs from privilege_ids column, fallback to old pid
+        const privilegeIds = userData.privilege_ids || (userData.pid ? [userData.pid] : []);
 
         res.json({
             success: true,

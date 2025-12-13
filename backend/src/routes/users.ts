@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { users, user_privileges } from '../db/schema';
+import { users } from '../db/schema';
 import { not, eq, like, or, and, sql } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
@@ -12,13 +12,24 @@ router.use(authMiddleware);
 import { roles, privillages } from '../db/schema';
 
 // Get Users (exclude Admins)
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
     try {
         const search = req.query.search as string;
 
-        // Base condition: Not Admins (based on role)
+        // Get the authenticated user's apikey
+        const userApiKey = req.user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not authenticated'
+            });
+        }
+
+        // Base condition: Not Admins (based on role) AND same apikey (company)
         const baseCondition = and(
-            not(eq(users.rid, 1)) // Assuming role 1 is admin
+            not(eq(users.rid, 1)), // Assuming role 1 is admin
+            eq(users.apikey, userApiKey) // Filter by company apikey
         );
 
         const whereClause = search ? and(
@@ -44,6 +55,7 @@ router.get('/', async (req: Request, res: Response) => {
             apikey: users.apikey,
             rid: users.rid,
             pid: users.pid, // Keep for backward compatibility
+            privilege_ids: users.privilege_ids, // Get privilege array
             role: roles.role,
             privilege: privillages.privil,
             comname: users.comname,
@@ -58,31 +70,10 @@ router.get('/', async (req: Request, res: Response) => {
             .limit(limit)
             .offset(offset);
 
-        // Fetch privileges for each user from user_privileges table
-        const userIds = result.map(u => u.id);
-        const privilegesMap = new Map<number, number[]>();
-
-        if (userIds.length > 0) {
-            const privilegesResult = await db
-                .select({
-                    user_id: user_privileges.user_id,
-                    privilege_id: user_privileges.privilege_id
-                })
-                .from(user_privileges)
-                .where(sql`${user_privileges.user_id} IN (${sql.join(userIds.map(id => sql`${id}`), sql`, `)})`);
-
-            privilegesResult.forEach(p => {
-                if (!privilegesMap.has(p.user_id)) {
-                    privilegesMap.set(p.user_id, []);
-                }
-                privilegesMap.get(p.user_id)!.push(p.privilege_id);
-            });
-        }
-
         // Map results with privilege arrays
         const mappedResult = result.map(user => ({
             ...user,
-            privileges: privilegesMap.get(user.id) || (user.pid ? [user.pid] : []) // Fallback to old pid
+            privileges: user.privilege_ids || (user.pid ? [user.pid] : []) // Use privilege_ids or fallback
         }));
 
         res.json(createPaginatedResponse(mappedResult, total, page, limit));
@@ -91,23 +82,12 @@ router.get('/', async (req: Request, res: Response) => {
     }
 });
 
-// Get Roles
+// Get Roles (lookup table - read-only, not filtered by apikey)
 router.get('/roles', async (req: AuthRequest, res: Response) => {
     try {
-        // Get the authenticated user's apikey
-        const userApiKey = req.user?.apikey;
-
-        if (!userApiKey) {
-            return res.status(401).json({
-                success: false,
-                error: 'User not authenticated'
-            });
-        }
-
-        // Filter roles by apikey
-        const rolesData = await db.select()
-            .from(roles)
-            .where(eq(roles.apikey, userApiKey));
+        // Roles are a lookup table - return all available roles
+        // These are NOT filtered by apikey as they are shared across all companies
+        const rolesData = await db.select().from(roles);
 
         const mappedRoles = rolesData.map(r => ({
             id: r.id,
@@ -120,13 +100,21 @@ router.get('/roles', async (req: AuthRequest, res: Response) => {
             data: mappedRoles
         });
     } catch (err: any) {
-        res.status(500).json({ error: err.message });
+        console.error('Roles query error:', err);
+        // Return empty array if table doesn't exist or query fails
+        res.json({
+            success: true,
+            data: []
+        });
     }
 });
 
-// Get Privileges
-router.get('/privileges', async (req: AuthRequest, res: Response) => {
+// Update user
+router.put('/:id', async (req: AuthRequest, res: Response) => {
     try {
+        const { id } = req.params;
+        const { uname, fname, email, mobile, rid, pid, pass } = req.body;
+
         // Get the authenticated user's apikey
         const userApiKey = req.user?.apikey;
 
@@ -137,10 +125,94 @@ router.get('/privileges', async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // Filter privileges by apikey
-        const privilegesData = await db.select()
-            .from(privillages)
-            .where(eq(privillages.apikey, userApiKey));
+        // Build update object
+        const updateData: any = {
+            uname,
+            fname,
+            email,
+            mobile,
+            rid: rid ? Number(rid) : undefined,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        };
+
+        // Handle privilege_ids array
+        if (pid) {
+            const privilegeIds = Array.isArray(pid) ? pid : [Number(pid)];
+            updateData.privilege_ids = privilegeIds;
+            updateData.pid = privilegeIds[0]; // Keep first for backward compatibility
+        }
+
+        // Only update password if provided
+        if (pass && pass.trim() !== '') {
+            const bcrypt = require('bcryptjs');
+            updateData.pass = await bcrypt.hash(pass, 10);
+        }
+
+        // Remove undefined values
+        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+        // Update user (only if belongs to same company)
+        await db.update(users)
+            .set(updateData)
+            .where(and(
+                eq(users.id, parseInt(id)),
+                eq(users.apikey, userApiKey) // Ensure user belongs to same company
+            ));
+
+        res.json({
+            success: true,
+            message: 'User updated successfully'
+        });
+    } catch (err: any) {
+        console.error('Update user error:', err);
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+// Delete user
+router.delete('/:id', async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Get the authenticated user's apikey
+        const userApiKey = req.user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not authenticated'
+            });
+        }
+
+        // Delete user (only if belongs to same company)
+        await db.delete(users)
+            .where(and(
+                eq(users.id, parseInt(id)),
+                eq(users.apikey, userApiKey) // Ensure user belongs to same company
+            ));
+
+        res.json({
+            success: true,
+            message: 'User deleted successfully'
+        });
+    } catch (err: any) {
+        console.error('Delete user error:', err);
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+// Get Privileges (lookup table - read-only, not filtered by apikey)
+router.get('/privileges', async (req: AuthRequest, res: Response) => {
+    try {
+        // Privileges are a lookup table - return all available privileges
+        // These are NOT filtered by apikey as they are shared across all companies
+        const privilegesData = await db.select().from(privillages);
 
         const mappedPrivileges = privilegesData.map(p => ({
             id: p.id,
@@ -153,7 +225,12 @@ router.get('/privileges', async (req: AuthRequest, res: Response) => {
             data: mappedPrivileges
         });
     } catch (err: any) {
-        res.status(500).json({ error: err.message });
+        console.error('Privileges query error:', err);
+        // Return empty array if table doesn't exist or query fails
+        res.json({
+            success: true,
+            data: []
+        });
     }
 });
 

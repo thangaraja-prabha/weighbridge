@@ -141,7 +141,8 @@ const Users: React.FC = () => {
             {/* Modal */}
             <AddUserModal
                 isOpen={showModal}
-                onClose={() => { setShowModal(false); setSelectedUser(null); loadUsers(); }}
+                onClose={() => { setShowModal(false); setSelectedUser(null); }}
+                onSuccess={loadUsers}
                 user={selectedUser}
             />
         </div>

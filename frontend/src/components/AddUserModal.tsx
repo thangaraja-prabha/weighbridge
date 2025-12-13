@@ -6,6 +6,7 @@ import { userApi, Role, Privilege } from '../api/user';
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void; // Callback to refresh parent data
   user?: any;
 }
 
@@ -21,7 +22,7 @@ interface FormData {
   comadd: string;
 }
 
-const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) => {
+const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess, user }) => {
   const [formData, setFormData] = useState<FormData>({
     uname: '',
     pass: '',
@@ -110,9 +111,12 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) =>
 
       if (data.success) {
         toast.success(user ? 'User updated successfully!' : 'User created successfully!');
+        // Call onSuccess callback to refresh parent data
+        if (onSuccess) {
+          onSuccess();
+        }
         setTimeout(() => {
           onClose();
-          // Navigate/refresh is handled by parent reloading
         }, 1000);
       } else {
         toast.error(data.message || (user ? 'Failed to update user' : 'Failed to create user'));
