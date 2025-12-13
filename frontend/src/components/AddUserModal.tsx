@@ -16,7 +16,7 @@ interface FormData {
   email: string;
   mobile: string;
   rid: number;
-  pid: number;
+  pid: number[]; // Changed to array for multiple privileges
   comname: string;
   comadd: string;
 }
@@ -29,7 +29,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) =>
     email: '',
     mobile: '',
     rid: 1,
-    pid: 1,
+    pid: [], // Initialize as empty array
     comname: '',
     comadd: ''
   });
@@ -62,7 +62,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) =>
           email: user.email || '',
           mobile: user.mobile || '',
           rid: user.rid || 1,
-          pid: user.pid || 1,
+          pid: Array.isArray(user.pid) ? user.pid : (user.pid ? [user.pid] : []),
           comname: user.comname || '',
           comadd: user.comadd || ''
         });
@@ -70,7 +70,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) =>
         // Reset form for new user
         setFormData({
           uname: '', pass: '', fname: '', email: '', mobile: '',
-          rid: 1, pid: 1, comname: '', comadd: ''
+          rid: 1, pid: [], comname: '', comadd: ''
         });
       }
     }
@@ -222,49 +222,34 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, user }) =>
               </select>
             </div>
 
-            {/* Company Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Company Name</label>
-              <input
-                type="text"
-                name="comname"
-                value={formData.comname}
-                onChange={handleChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Enter company name"
-              />
-            </div>
-
-            {/* Company Address */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Company Address</label>
-              <textarea
-                name="comadd"
-                value={formData.comadd}
-                onChange={handleChange}
-                rows={3}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Enter company address"
-              />
-            </div>
-
             {/* Privileges */}
             <div className="md:col-span-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Privilege *</label>
-                <select
-                  name="pid"
-                  value={formData.pid}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-2">Privileges *</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {privileges.map(privilege => (
-                    <option key={privilege.id} value={privilege.id}>
-                      {privilege.name}
-                    </option>
+                    <label key={privilege.id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.pid.includes(privilege.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFormData(prev => ({
+                            ...prev,
+                            pid: checked
+                              ? [...prev.pid, privilege.id]
+                              : prev.pid.filter(id => id !== privilege.id)
+                          }));
+                        }}
+                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">{privilege.name}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                {formData.pid.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">Please select at least one privilege</p>
+                )}
               </div>
             </div>
           </div>

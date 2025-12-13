@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { not, eq, like, or, and, sql } from 'drizzle-orm';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 
 const router = Router();
@@ -65,9 +65,23 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Get Roles
-router.get('/roles', async (req: Request, res: Response) => {
+router.get('/roles', async (req: AuthRequest, res: Response) => {
     try {
-        const rolesData = await db.select().from(roles);
+        // Get the authenticated user's apikey
+        const userApiKey = req.user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not authenticated'
+            });
+        }
+
+        // Filter roles by apikey
+        const rolesData = await db.select()
+            .from(roles)
+            .where(eq(roles.apikey, userApiKey));
+
         const mappedRoles = rolesData.map(r => ({
             id: r.id,
             name: r.role,
@@ -84,9 +98,23 @@ router.get('/roles', async (req: Request, res: Response) => {
 });
 
 // Get Privileges
-router.get('/privileges', async (req: Request, res: Response) => {
+router.get('/privileges', async (req: AuthRequest, res: Response) => {
     try {
-        const privilegesData = await db.select().from(privillages);
+        // Get the authenticated user's apikey
+        const userApiKey = req.user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not authenticated'
+            });
+        }
+
+        // Filter privileges by apikey
+        const privilegesData = await db.select()
+            .from(privillages)
+            .where(eq(privillages.apikey, userApiKey));
+
         const mappedPrivileges = privilegesData.map(p => ({
             id: p.id,
             name: p.privil,
