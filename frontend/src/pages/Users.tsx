@@ -85,7 +85,7 @@ const Users: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {loading && <tr><td colSpan={4} className="text-center py-4">Loading...</td></tr>}
+                            {loading && <tr><td colSpan={5} className="text-center py-4">Loading...</td></tr>}
                             {!loading && users.map((u: any) => (
                                 <tr key={u.id}>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -101,7 +101,9 @@ const Users: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-900">Role: {u.role}</div>
-                                        <div className="text-xs text-gray-500">Privileges: {u.privilege}</div>
+                                        <div className="text-xs text-gray-500">
+                                            Privileges: {u.privilege_names || u.privilege}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-900">{u.comname || '-'}</div>

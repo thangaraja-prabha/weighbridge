@@ -70,11 +70,39 @@ router.get('/', async (req: AuthRequest, res: Response) => {
             .limit(limit)
             .offset(offset);
 
-        // Map results with privilege arrays
-        const mappedResult = result.map(user => ({
-            ...user,
-            privileges: user.privilege_ids || (user.pid ? [user.pid] : []) // Use privilege_ids or fallback
-        }));
+        // Fetch all privileges for mapping
+        const allPrivileges = await db.select().from(privillages);
+        const privMap = new Map(allPrivileges.map(p => [p.id, p.privil]));
+
+        // Map results with privilege arrays and names
+        const mappedResult = result.map(user => {
+            let userPrivs: any = user.privilege_ids;
+
+            // Handle potential string response for JSON column
+            if (typeof userPrivs === 'string') {
+                try {
+                    userPrivs = JSON.parse(userPrivs);
+                } catch (e) {
+                    console.warn('Failed to parse privilege_ids for user', user.id, e);
+                    userPrivs = [];
+                }
+            }
+
+            // Ensure we have an array
+            const rawIds = Array.isArray(userPrivs) ? userPrivs : (user.pid ? [user.pid] : []);
+
+            // Convert to numbers safely
+            const pIds = rawIds.map((id: any) => Number(id)).filter((n: number) => !isNaN(n));
+
+            // Map IDs to names
+            const pNames = pIds.map(id => privMap.get(id)).filter(Boolean);
+
+            return {
+                ...user,
+                privileges: pIds,
+                privilege_names: pNames.join(', ') // Return comma separated names
+            };
+        });
 
         res.json(createPaginatedResponse(mappedResult, total, page, limit));
     } catch (err: any) {
@@ -136,10 +164,12 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
         };
 
         // Handle privilege_ids array
-        if (pid) {
-            const privilegeIds = Array.isArray(pid) ? pid : [Number(pid)];
+        if (pid !== undefined) {
+            const rawIds = Array.isArray(pid) ? pid : [pid];
+            const privilegeIds = rawIds.map((id: any) => Number(id)).filter((n: number) => !isNaN(n));
+
             updateData.privilege_ids = privilegeIds;
-            updateData.pid = privilegeIds[0]; // Keep first for backward compatibility
+            updateData.pid = privilegeIds.length > 0 ? privilegeIds[0] : null; // Keep first for backward compatibility
         }
 
         // Only update password if provided

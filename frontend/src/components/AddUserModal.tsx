@@ -1,7 +1,30 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { userApi, Role, Privilege } from '../api/user';
+import Select from 'react-select';
+
+// Reusable Checkbox component
+const Checkbox = ({
+  checked,
+  onChange,
+  label,
+  className = ''
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  className?: string;
+}) => (
+  <label className={`flex items-center space-x-2 cursor-pointer ${className}`}>
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+    />
+    <span className="text-sm text-gray-700">{label}</span>
+  </label>
+);
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -63,7 +86,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
           email: user.email || '',
           mobile: user.mobile || '',
           rid: user.rid || 1,
-          pid: Array.isArray(user.pid) ? user.pid : (user.pid ? [user.pid] : []),
+          pid: user.privileges || [],
           comname: user.comname || '',
           comadd: user.comadd || ''
         });
@@ -79,27 +102,39 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target as HTMLInputElement;
+
+    // Special handling for checkboxes and other specific fields
+    if (name === 'pid') {
+      // pid is handled separately in the checkbox onChange
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'rid' || name === 'pid') ? parseInt(value) : value
+      [name]: (name === 'rid') ? parseInt(value) : value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields for new users
+    if (!user && !formData.pass) {
+      toast.error('Password is required for new users');
+      return;
+    }
+
     setLoading(true);
 
     try {
       let data;
       if (user) {
-        // Update existing user
-        data = await userApi.updateUser(user.id, {
-          ...formData,
-          // Only send password if it's not empty, assuming backend handles that. 
-          // If backend requires password always, then we must strictly validate.
-          // For now sending as is.
-        });
+        // For updates, only include password if it was changed
+        const { pass, ...updateData } = formData;
+        const payload = pass ? { ...updateData, pass } : updateData;
+
+        data = await userApi.updateUser(user.id, payload);
       } else {
         // Create new user
         data = await userApi.createUser({
@@ -162,11 +197,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
                 name="pass"
                 value={formData.pass}
                 onChange={handleChange}
-                required
+                required={!user} // Only required for new users
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Enter password"
+                placeholder={user ? 'Leave blank to keep current password' : 'Enter password'}
               />
-              {user && <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password</p>}
             </div>
 
             {/* Full Name */}
@@ -230,27 +264,43 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
             <div className="md:col-span-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Privileges *</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {privileges.map(privilege => (
-                    <label key={privilege.id} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.pid.includes(privilege.id)}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setFormData(prev => ({
-                            ...prev,
-                            pid: checked
-                              ? [...prev.pid, privilege.id]
-                              : prev.pid.filter(id => id !== privilege.id)
-                          }));
-                        }}
-                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                      <span className="text-sm text-gray-700">{privilege.name}</span>
-                    </label>
-                  ))}
-                </div>
+                <Select
+                  isMulti
+                  options={privileges.map(p => ({
+                    label: p.name,
+                    value: p.id
+                  }))}
+                  value={formData.pid.map(id => ({
+                    value: id,
+                    label: privileges.find(p => p.id === id)?.name || ''
+                  }))}
+                  onChange={(selected: any) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      pid: selected ? selected.map((item: any) => item.value) : []
+                    }));
+                  }}
+                  placeholder="Select privileges..."
+                  className="text-sm"
+                  styles={{
+                    menu: (provided) => ({
+                      ...provided,
+                      zIndex: 50
+                    }),
+                    control: (provided) => ({
+                      ...provided,
+                      minHeight: '42px',
+                      borderColor: '#d1d5db',
+                      '&:hover': {
+                        borderColor: '#9ca3af'
+                      },
+                      '&:focus-within': {
+                        borderColor: '#3b82f6',
+                        boxShadow: '0 0 0 1px #3b82f6'
+                      }
+                    })
+                  }}
+                />
                 {formData.pid.length === 0 && (
                   <p className="text-xs text-red-500 mt-1">Please select at least one privilege</p>
                 )}
