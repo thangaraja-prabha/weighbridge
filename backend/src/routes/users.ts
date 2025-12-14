@@ -4,6 +4,7 @@ import { users } from '../db/schema';
 import { not, eq, like, or, and, sql } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
+import { validateIndianMobileNumber } from '../utils/validation';
 
 const router = Router();
 
@@ -16,8 +17,9 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     try {
         const search = req.query.search as string;
 
-        // Get the authenticated user's apikey
+        // Get the authenticated user's apikey and id
         const userApiKey = req.user?.apikey;
+        const userId = req.user?.id;
 
         if (!userApiKey) {
             return res.status(401).json({
@@ -26,10 +28,11 @@ router.get('/', async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // Base condition: Not Admins (based on role) AND same apikey (company)
+        // Base condition: Not Admins (based on role) AND same apikey (company) AND not the current user
         const baseCondition = and(
             not(eq(users.rid, 1)), // Assuming role 1 is admin
-            eq(users.apikey, userApiKey) // Filter by company apikey
+            eq(users.apikey, userApiKey), // Filter by company apikey
+            userId ? not(eq(users.id, userId)) : undefined // Exclude current user
         );
 
         const whereClause = search ? and(
@@ -122,8 +125,9 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
         const search = req.query.search as string;
         const { page, limit, offset } = getPaginationParams(req);
 
-        // Get the authenticated user's apikey
+        // Get the authenticated user's apikey and id
         const userApiKey = req.user?.apikey;
+        const userId = req.user?.id;
 
         if (!userApiKey) {
             return res.status(401).json({
@@ -132,10 +136,11 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // Base condition: Not Admins (based on role) AND same apikey (company)
+        // Base condition: Not Admins (based on role) AND same apikey (company) AND not the current user
         const baseCondition = and(
             not(eq(users.rid, 1)), // Assuming role 1 is admin
-            eq(users.apikey, userApiKey) // Filter by company apikey
+            eq(users.apikey, userApiKey), // Filter by company apikey
+            userId ? not(eq(users.id, userId)) : undefined // Exclude current user
         );
 
         const whereClause = search ? and(
@@ -259,6 +264,14 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
             return res.status(401).json({
                 success: false,
                 error: 'User not authenticated'
+            });
+        }
+
+        // Validate mobile number if provided
+        if (mobile && !validateIndianMobileNumber(mobile)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Please enter a valid Indian mobile number (10 digits starting with 6, 7, 8, or 9)'
             });
         }
 

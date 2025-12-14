@@ -19,7 +19,8 @@
     "react-dom": "^19.2.1",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.10.1",
-    "react-select": "^5.10.2"
+    "react-select": "^5.10.2",
+    "react-switch": "^7.1.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",

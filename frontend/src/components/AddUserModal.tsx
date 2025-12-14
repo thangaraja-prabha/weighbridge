@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { userApi, Role, Privilege } from '../api/user';
 import Select from 'react-select';
+import { handleMobileInputChange, getMobileValidationError, formatMobileNumber } from '../utils/validation';
 
 // Reusable Checkbox component
 const Checkbox = ({
@@ -51,12 +52,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
     pass: '',
     fname: '',
     email: '',
-    mobile: '',
+    mobile: '+91 ',
     rid: 1,
     pid: [], // Initialize as empty array
     comname: '',
     comadd: ''
   });
+  const [errors, setErrors] = useState<Partial<FormData>>({});
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [privileges, setPrivileges] = useState<Privilege[]>([]);
@@ -84,7 +86,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
           pass: '', // Don't populate password
           fname: user.empname || user.username || '',
           email: user.email || '',
-          mobile: user.mobile || '',
+          mobile: user.mobile ? formatMobileNumber(user.mobile) : '+91 ',
           rid: user.rid || 1,
           pid: user.privileges || [],
           comname: user.comname || '',
@@ -93,7 +95,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
       } else {
         // Reset form for new user
         setFormData({
-          uname: '', pass: '', fname: '', email: '', mobile: '',
+          uname: '', pass: '', fname: '', email: '', mobile: '+91 ',
           rid: 1, pid: [], comname: '', comadd: ''
         });
       }
@@ -110,6 +112,22 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
       return;
     }
 
+    // Special handling for mobile number
+    if (name === 'mobile') {
+      handleMobileInputChange(value, (newValue) => {
+        setFormData(prev => ({
+          ...prev,
+          [name]: newValue
+        }));
+        
+        // Clear error when user starts typing
+        if (errors.mobile) {
+          setErrors(prev => ({ ...prev, mobile: undefined }));
+        }
+      });
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: (name === 'rid') ? parseInt(value) : value
@@ -118,6 +136,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate mobile number
+    const mobileError = getMobileValidationError(formData.mobile);
+    if (mobileError) {
+      setErrors(prev => ({ ...prev, mobile: mobileError }));
+      toast.error(mobileError);
+      return;
+    }
 
     // Validate required fields for new users
     if (!user && !formData.pass) {
@@ -239,9 +265,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
                 name="mobile"
                 value={formData.mobile}
                 onChange={handleChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-                placeholder="Enter mobile number"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm ${
+                  errors.mobile ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="+91 "
               />
+              {errors.mobile && (
+                <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>
+              )}
             </div>
 
             {/* Role */}

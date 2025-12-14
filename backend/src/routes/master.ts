@@ -1,22 +1,38 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { depts, shifts, nopt, mdetail, vdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails } from '../db/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { depts, shifts, nopt, mdetail, vdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails, modes } from '../db/schema';
+import { eq, desc, like, sql, and } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
+import { validateIndianMobileNumber } from '../utils/validation';
 
 const router = Router();
 
 router.use(authMiddleware);
 
+// Modes
+router.get('/modes', async (req: Request, res: Response) => {
+    try {
+        const result = await db.select().from(modes).orderBy(modes.id);
+        res.json(result);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 // Departments
 router.get('/dept', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(depts);
+        const userApiKey = (req as any).user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({ error: 'Unauthorized - API key required' });
+        }
+
+        const whereCondition = eq(depts.apikey, userApiKey);
+        const countResult = await db.select({ count: sql`count(*)` }).from(depts).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(depts).limit(limit).offset(offset).orderBy(desc(depts.id));
+        const result = await db.select().from(depts).where(whereCondition).limit(limit).offset(offset).orderBy(desc(depts.id));
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -25,10 +41,17 @@ router.get('/dept', async (req: Request, res: Response) => {
 router.get('/shifts', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(shifts);
+        const userApiKey = (req as any).user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({ error: 'Unauthorized - API key required' });
+        }
+
+        const whereCondition = eq(shifts.apikey, userApiKey);
+        const countResult = await db.select({ count: sql`count(*)` }).from(shifts).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(shifts).limit(limit).offset(offset).orderBy(desc(shifts.id));
+        const result = await db.select().from(shifts).where(whereCondition).limit(limit).offset(offset).orderBy(desc(shifts.id));
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -37,10 +60,17 @@ router.get('/shifts', async (req: Request, res: Response) => {
 router.get('/nop', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(nopt);
+        const userApiKey = (req as any).user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({ error: 'Unauthorized - API key required' });
+        }
+
+        const whereCondition = eq(nopt.apikey, userApiKey);
+        const countResult = await db.select({ count: sql`count(*)` }).from(nopt).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(nopt).limit(limit).offset(offset).orderBy(desc(nopt.id));
+        const result = await db.select().from(nopt).where(whereCondition).limit(limit).offset(offset).orderBy(desc(nopt.id));
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -49,10 +79,19 @@ router.get('/nop', async (req: Request, res: Response) => {
 router.get('/materials', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(materials);
+        const { search } = req.query;
+        const userApiKey = (req as any).user?.apikey;
+
+        let conditions = [];
+        if (userApiKey) conditions.push(eq(materials.apikey, userApiKey));
+        if (search && typeof search === 'string') conditions.push(like(materials.mname, `%${search}%`));
+
+        const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const countResult = await db.select({ count: sql`count(*)` }).from(materials).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(materials).limit(limit).offset(offset).orderBy(desc(materials.id));
+        const result = await db.select().from(materials).where(whereCondition).limit(limit).offset(offset).orderBy(desc(materials.id));
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -60,9 +99,9 @@ router.get('/materials', async (req: Request, res: Response) => {
 router.post('/materials', async (req: Request, res: Response) => {
     try {
         const { mname, mdetail } = req.body;
-        await db.insert(materials).values({ 
-            mname, 
-            mdetail, 
+        await db.insert(materials).values({
+            mname,
+            mdetail,
             apikey: (req as any).user.apikey || 'WESOPC01',
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -75,10 +114,19 @@ router.post('/materials', async (req: Request, res: Response) => {
 router.get('/customers', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(customers);
+        const { search } = req.query;
+        const userApiKey = (req as any).user?.apikey;
+
+        let conditions = [];
+        if (userApiKey) conditions.push(eq(customers.apikey, userApiKey));
+        if (search && typeof search === 'string') conditions.push(like(customers.cname, `%${search}%`));
+
+        const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const countResult = await db.select({ count: sql`count(*)` }).from(customers).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(customers).limit(limit).offset(offset).orderBy(desc(customers.id));
+        const result = await db.select().from(customers).where(whereCondition).limit(limit).offset(offset).orderBy(desc(customers.id));
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -86,10 +134,10 @@ router.get('/customers', async (req: Request, res: Response) => {
 router.post('/customers', async (req: Request, res: Response) => {
     try {
         const { cname, cadd, cnum, crem } = req.body;
-        await db.insert(customers).values({ 
-            cname, 
-            cadd, 
-            cnum, 
+        await db.insert(customers).values({
+            cname,
+            cadd,
+            cnum,
             crem,
             apikey: (req as any).user.apikey || 'WESOPC01',
             uid: (req as any).user.id || 1,
@@ -103,10 +151,19 @@ router.post('/customers', async (req: Request, res: Response) => {
 router.get('/suppliers', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(suppliers);
+        const { search } = req.query;
+        const userApiKey = (req as any).user?.apikey;
+
+        let conditions = [];
+        if (userApiKey) conditions.push(eq(suppliers.apikey, userApiKey));
+        if (search && typeof search === 'string') conditions.push(like(suppliers.sname, `%${search}%`));
+
+        const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const countResult = await db.select({ count: sql`count(*)` }).from(suppliers).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(suppliers).limit(limit).offset(offset).orderBy(desc(suppliers.id));
+        const result = await db.select().from(suppliers).where(whereCondition).limit(limit).offset(offset).orderBy(desc(suppliers.id));
         res.json(createPaginatedResponse(result, total, page, limit));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -114,10 +171,10 @@ router.get('/suppliers', async (req: Request, res: Response) => {
 router.post('/suppliers', async (req: Request, res: Response) => {
     try {
         const { sname, sadd, snum, srem } = req.body;
-        await db.insert(suppliers).values({ 
-            sname, 
-            sadd, 
-            snum, 
+        await db.insert(suppliers).values({
+            sname,
+            sadd,
+            snum,
             srem,
             apikey: (req as any).user.apikey || 'WESOPC01',
             uid: (req as any).user.id || 1,
@@ -131,22 +188,82 @@ router.post('/suppliers', async (req: Request, res: Response) => {
 router.get('/transporters', async (req: Request, res: Response) => {
     try {
         const { page, limit, offset } = getPaginationParams(req);
-        const countResult = await db.select({ count: sql`count(*)` }).from(tdetails);
+        const { search } = req.query;
+        const userApiKey = (req as any).user?.apikey;
+
+        let conditions = [];
+
+        // Filter by company API key
+        if (userApiKey) {
+            conditions.push(eq(tdetails.apikey, userApiKey));
+        }
+
+        // Add search functionality
+        if (search && typeof search === 'string') {
+            conditions.push(sql`(tnum LIKE ${`%${search}%`} OR tname LIKE ${`%${search}%`} OR tmob LIKE ${`%${search}%`})`);
+        }
+
+        const whereCondition = conditions.length > 0 ? conditions.length === 1 ? conditions[0] : and(...conditions) : undefined;
+
+        const countResult = await db.select({ count: sql`count(*)` }).from(tdetails).where(whereCondition);
         // @ts-ignore
         const total = Number(countResult[0].count);
-        const result = await db.select().from(tdetails).limit(limit).offset(offset).orderBy(desc(tdetails.id));
+        const result = await db.select().from(tdetails).where(whereCondition).limit(limit).offset(offset).orderBy(desc(tdetails.id));
         res.json(createPaginatedResponse(result, total, page, limit));
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Transporter search endpoint for autocomplete
+router.get('/transporters/search', async (req: Request, res: Response) => {
+    try {
+        const { q } = req.query;
+        const userApiKey = (req as any).user?.apikey;
+
+        if (!q || typeof q !== 'string') {
+            return res.status(400).json({ error: 'Search query is required' });
+        }
+
+        let conditions = [];
+
+        // Filter by company API key
+        if (userApiKey) {
+            conditions.push(eq(tdetails.apikey, userApiKey));
+        }
+
+        // Search across multiple fields
+        conditions.push(sql`(tnum LIKE ${`%${q}%`} OR tname LIKE ${`%${q}%`} OR tmob LIKE ${`%${q}%`})`);
+
+        const whereCondition = conditions.length > 0 ? conditions.length === 1 ? conditions[0] : and(...conditions) : undefined;
+
+        const result = await db.select({
+            id: tdetails.id,
+            tnum: tdetails.tnum,
+            tname: tdetails.tname,
+            tadd: tdetails.tadd,
+            tmob: tdetails.tmob,
+            trem: tdetails.trem
+        }).from(tdetails).where(whereCondition).limit(10);
+
+        res.json(result);
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/transporters', async (req: Request, res: Response) => {
     try {
         const { tnum, tname, tadd, tmob, trem } = req.body;
-        await db.insert(tdetails).values({ 
-            tnum, 
-            tname, 
-            tadd, 
-            tmob, 
+
+        // Validate mobile number if provided
+        if (tmob && !validateIndianMobileNumber(tmob)) {
+            return res.status(400).json({
+                error: 'Please enter a valid Indian mobile number (10 digits starting with 6, 7, 8, or 9)'
+            });
+        }
+
+        await db.insert(tdetails).values({
+            tnum,
+            tname,
+            tadd,
+            tmob,
             trem,
             apikey: (req as any).user.apikey || 'WESOPC01',
             uid: (req as any).user.id || 1,

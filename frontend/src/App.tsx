@@ -6,6 +6,7 @@ import ChangePassword from './pages/ChangePassword';
 import Users from './pages/Users';
 import Customers from './pages/Customers';
 import Register from './pages/Register';
+import Settings from './pages/Wlog';
 import Layout from './components/Layout';
 
 // Protected Route Component
@@ -57,6 +58,18 @@ function App() {
                         <ProtectedRoute>
                             <Layout>
                                 <Users />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Settings */}
+                <Route
+                    path="/wlog"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Settings />
                             </Layout>
                         </ProtectedRoute>
                     }

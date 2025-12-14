@@ -42,7 +42,7 @@ export const users = mysqlTable('users', {
     pass: varchar('pass', { length: 255 }).notNull(),
     fname: varchar('fname', { length: 30 }),
     email: varchar('email', { length: 50 }),
-    mobile: varchar('mobile', { length: 30 }),
+    mobile: varchar('mobile', { length: 10 }), // Indian mobile numbers are exactly 10 digits
     rid: int('rid'),          // role id
     pid: int('pid'),          // privilege id (deprecated, use privilege_ids)
     privilege_ids: json('privilege_ids').$type<number[]>(), // Array of privilege IDs
@@ -66,7 +66,10 @@ export const wlog = mysqlTable('wlog', {
     cid: int('cid'),
     apikey: varchar('apikey', { length: 10 }),
     uid: int('uid'),
-    udt: varchar('udt', { length: 20 })
+    udt: varchar('udt', { length: 20 }),
+    driver: varchar('driver', { length: 50 }),
+    remarks: text('remarks'),
+    fwtdt: varchar('fwtdt', { length: 30 })
 });
 
 // Legacy wlog table for backward compatibility
@@ -148,7 +151,7 @@ export const tdetails = mysqlTable('tdetails', {
     tnum: varchar('tnum', { length: 10 }),
     tname: varchar('tname', { length: 30 }),
     tadd: text('tadd'),
-    tmob: varchar('tmob', { length: 30 }),
+    tmob: varchar('tmob', { length: 10 }), // Indian mobile numbers are exactly 10 digits
     trem: text('trem'),
     apikey: varchar('apikey', { length: 10 }),
     uid: int('uid'),
@@ -184,6 +187,7 @@ export const vdetail = mysqlTable('vdetail', {
     id: int('id').primaryKey().autoincrement(),
     vnum: varchar('vnum', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -191,6 +195,7 @@ export const mdetail = mysqlTable('mdetail', {
     id: int('id').primaryKey().autoincrement(),
     mname: varchar('mname', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -198,6 +203,7 @@ export const tdetail = mysqlTable('tdetail', {
     id: int('id').primaryKey().autoincrement(),
     tname: varchar('tname', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -205,6 +211,7 @@ export const sdetail = mysqlTable('sdetail', {
     id: int('id').primaryKey().autoincrement(),
     sname: varchar('sname', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -212,6 +219,7 @@ export const cdetail = mysqlTable('cdetail', {
     id: int('id').primaryKey().autoincrement(),
     cname: varchar('cname', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -219,6 +227,7 @@ export const depts = mysqlTable('depts', {
     id: int('id').primaryKey().autoincrement(),
     dept: varchar('dept', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -228,6 +237,7 @@ export const shifts = mysqlTable('shifts', {
     stshift: varchar('stshift', { length: 10 }),
     edshift: varchar('edshift', { length: 10 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 
@@ -235,6 +245,7 @@ export const nopt = mysqlTable('nopt', {
     id: int('id').primaryKey().autoincrement(),
     nop: varchar('nop', { length: 50 }),
     username: varchar('username', { length: 50 }),
+    apikey: varchar('apikey', { length: 10 }),
     trn_date: varchar('trn_date', { length: 25 }),
 });
 

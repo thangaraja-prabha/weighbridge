@@ -9,7 +9,7 @@ export interface PaginationResult<T> {
 
 export function getPaginationParams(req: Request, defaultLimit = 10) {
     const page = parseInt(req.query.page as string) || 1;
-    let limit = parseInt(req.query.limit as string) || defaultLimit;
+    let limit = parseInt(req.query.limit as string) || 10; // Force default to 10
     if (limit < 1) limit = 10;
     const offset = (page - 1) * limit;
     return { page, limit, offset };

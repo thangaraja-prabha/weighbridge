@@ -10,6 +10,7 @@ import reportRoutes from './routes/reports';
 import weighmentRoutes from './routes/weighment';
 import kycRoutes from './routes/kyc';
 import tableRoutes from './routes/tables';
+import wlogRoutes from './routes/wlog';
 import { testConnection } from './db';
 
 // Load environment variables
@@ -50,6 +51,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/weighment', weighmentRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/tables', tableRoutes);
+app.use('/api/wlog', wlogRoutes);
 
 // Serve index.html for any other GET request (SPA fallback)
 app.get('/{*splat}', (req: Request, res: Response) => {

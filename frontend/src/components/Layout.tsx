@@ -12,7 +12,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const role = user.rid || 1; // Default to user role 1
-    
+
     // Debug: Log user info
     console.log('User from localStorage:', user);
     console.log('User rid:', role);
@@ -38,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         WeighIn: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 11a1 1 0 001 1h8a1 1 0 001-1l3-11M3 6h18" /></svg>,
         WeighOut: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
         Create: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>,
+        Users: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
         Password: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
         Logout: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
     };
@@ -173,10 +174,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                         {role === 2 && ( // Managers
                             <>
-                                <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
-                                <MenuItem label="CONFIG" isDropdown icon={Icons.Config}>
-                                    <SubMenuItem to="/employees" label="USERS" />
-                                    <SubMenuItem to="/setting" label="SETTING" />
+                                <MenuItem to="/employees" label="USERS" icon={Icons.Users} />
+                                <MenuItem to="/wlog" label="SETTING" icon={Icons.Config}>
+
                                 </MenuItem>
                             </>
                         )}
@@ -184,13 +184,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {role === 1 && ( // Users
                             <>
                                 <MenuItem to="/entry" label="ENTRY" icon={Icons.Entry} />
-                                <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
                             </>
                         )}
 
-                        {role === 1 && ( // Admin (assuming admin is rid=1)
+                        {role === 3 && ( // Admin (assuming admin is rid=3)
                             <>
-                                <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
                             </>
                         )}
 
@@ -198,7 +196,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {![1, 2, 3].includes(role) && (
                             <>
                                 <MenuItem to="/dashboard" label="WEIGH IN" icon={Icons.WeighIn} />
-                                <MenuItem to="/search" label="SEARCH" icon={Icons.Search} />
                                 <MenuItem to="/master-data" label="MASTER DATA" icon={Icons.Config} />
                             </>
                         )}
@@ -279,11 +276,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {children}
                 </main>
             </div>
-            
+
             {/* Add User Modal */}
-            <AddUserModal 
-                isOpen={isAddUserModalOpen} 
-                onClose={() => setIsAddUserModalOpen(false)} 
+            <AddUserModal
+                isOpen={isAddUserModalOpen}
+                onClose={() => setIsAddUserModalOpen(false)}
             />
         </div>
     );
