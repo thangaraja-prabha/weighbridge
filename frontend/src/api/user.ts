@@ -57,8 +57,22 @@ export const userApi = {
 
 
     // Get all users
-    getUsers: async (page = 1, limit = 10) => {
-        const response = await fetch(`${API_URL}/users?page=${page}&limit=${limit}`, {
+    getUsers: async (page = 1, limit = 10, search = '') => {
+        const url = search 
+            ? `${API_URL}/users/search?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`
+            : `${API_URL}/users?page=${page}&limit=${limit}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: getHeaders(),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        return data;
+    },
+
+    // Search users (dedicated endpoint)
+    searchUsers: async (search: string, page = 1, limit = 10) => {
+        const response = await fetch(`${API_URL}/users/search?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`, {
             method: 'GET',
             headers: getHeaders(),
         });

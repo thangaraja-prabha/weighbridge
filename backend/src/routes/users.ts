@@ -34,7 +34,13 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 
         const whereClause = search ? and(
             baseCondition,
-            like(users.fname, `%${search}%`)
+            or(
+                like(users.fname, `%${search}%`),
+                like(users.uname, `%${search}%`),
+                like(users.email, `%${search}%`),
+                like(users.mobile, `%${search}%`),
+                like(users.comname, `%${search}%`)
+            )
         ) : baseCondition;
 
         const { page, limit, offset } = getPaginationParams(req);
@@ -46,6 +52,109 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 
         // Perform Left Joins manually or select all and map if not using relations API
         // For Drizzle standard query builder:
+        const result = await db.select({
+            id: users.id,
+            username: users.uname,
+            fname: users.fname,
+            email: users.email,
+            mobile: users.mobile,
+            apikey: users.apikey,
+            rid: users.rid,
+            pid: users.pid, // Keep for backward compatibility
+            privilege_ids: users.privilege_ids, // Get privilege array
+            role: roles.role,
+            privilege: privillages.privil,
+            comname: users.comname,
+            comadd: users.comadd,
+            comnum: users.comnum,
+            comail: users.comail
+        })
+            .from(users)
+            .leftJoin(roles, eq(users.rid, roles.id))
+            .leftJoin(privillages, eq(users.pid, privillages.id))
+            .where(whereClause)
+            .limit(limit)
+            .offset(offset);
+
+        // Fetch all privileges for mapping
+        const allPrivileges = await db.select().from(privillages);
+        const privMap = new Map(allPrivileges.map(p => [p.id, p.privil]));
+
+        // Map results with privilege arrays and names
+        const mappedResult = result.map(user => {
+            let userPrivs: any = user.privilege_ids;
+
+            // Handle potential string response for JSON column
+            if (typeof userPrivs === 'string') {
+                try {
+                    userPrivs = JSON.parse(userPrivs);
+                } catch (e) {
+                    console.warn('Failed to parse privilege_ids for user', user.id, e);
+                    userPrivs = [];
+                }
+            }
+
+            // Ensure we have an array
+            const rawIds = Array.isArray(userPrivs) ? userPrivs : (user.pid ? [user.pid] : []);
+
+            // Convert to numbers safely
+            const pIds = rawIds.map((id: any) => Number(id)).filter((n: number) => !isNaN(n));
+
+            // Map IDs to names
+            const pNames = pIds.map(id => privMap.get(id)).filter(Boolean);
+
+            return {
+                ...user,
+                privileges: pIds,
+                privilege_names: pNames.join(', ') // Return comma separated names
+            };
+        });
+
+        res.json(createPaginatedResponse(mappedResult, total, page, limit));
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Search Users endpoint
+router.get('/search', async (req: AuthRequest, res: Response) => {
+    try {
+        const search = req.query.search as string;
+        const { page, limit, offset } = getPaginationParams(req);
+
+        // Get the authenticated user's apikey
+        const userApiKey = req.user?.apikey;
+
+        if (!userApiKey) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not authenticated'
+            });
+        }
+
+        // Base condition: Not Admins (based on role) AND same apikey (company)
+        const baseCondition = and(
+            not(eq(users.rid, 1)), // Assuming role 1 is admin
+            eq(users.apikey, userApiKey) // Filter by company apikey
+        );
+
+        const whereClause = search ? and(
+            baseCondition,
+            or(
+                like(users.fname, `%${search}%`),
+                like(users.uname, `%${search}%`),
+                like(users.email, `%${search}%`),
+                like(users.mobile, `%${search}%`),
+                like(users.comname, `%${search}%`)
+            )
+        ) : baseCondition;
+
+        // Count
+        const countResult = await db.select({ count: sql`count(*)` }).from(users).where(whereClause);
+        // @ts-ignore
+        const total = Number(countResult[0].count);
+
+        // Perform Left Joins manually or select all and map if not using relations API
         const result = await db.select({
             id: users.id,
             username: users.uname,
