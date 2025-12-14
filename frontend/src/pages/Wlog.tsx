@@ -57,10 +57,10 @@ const Wlog: React.FC = () => {
     });
 
     const [modes, setModes] = useState<any[]>([]);
-    const [materials, setMaterials] = useState<any[]>([]);
-    const [customers, setCustomers] = useState<any[]>([]);
-    const [suppliers, setSuppliers] = useState<any[]>([]);
-    const [transporters, setTransporters] = useState<any[]>([]);
+    // const [materials, setMaterials] = useState<any[]>([]);
+    // const [customers, setCustomers] = useState<any[]>([]);
+    // const [suppliers, setSuppliers] = useState<any[]>([]);
+    // const [transporters, setTransporters] = useState<any[]>([]);
 
     const [formData, setFormData] = useState<FormData>({
         mode: '',
