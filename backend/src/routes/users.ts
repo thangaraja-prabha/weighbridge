@@ -255,7 +255,7 @@ router.get('/roles', async (req: AuthRequest, res: Response) => {
 router.put('/:id', async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { uname, fname, email, mobile, rid, pid, pass } = req.body;
+        const { uname, fname, email, mobile, rid, pid, pass, comname, comadd } = req.body;
 
         // Get the authenticated user's apikey
         const userApiKey = req.user?.apikey;
@@ -282,6 +282,8 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
             email,
             mobile,
             rid: rid ? Number(rid) : undefined,
+            comname,
+            comadd,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         };
 

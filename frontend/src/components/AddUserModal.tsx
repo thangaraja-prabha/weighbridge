@@ -119,7 +119,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
           ...prev,
           [name]: newValue
         }));
-        
+
         // Clear error when user starts typing
         if (errors.mobile) {
           setErrors(prev => ({ ...prev, mobile: undefined }));
@@ -165,8 +165,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
         // Create new user
         data = await userApi.createUser({
           ...formData,
-          comnum: 'DEFAULT', // Start with default, backend will overwrite if using /addUser logic but let's keep consistent
-          comail: 'default@company.com'
+          ...formData,
+          comnum: 'DEFAULT',
+          comail: 'default@company.com',
+          comname: user ? user.comname : (JSON.parse(localStorage.getItem('user') || '{}').comname || '')
         });
       }
 
@@ -265,9 +267,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess,
                 name="mobile"
                 value={formData.mobile}
                 onChange={handleChange}
-                className={`mt-1 block w-full rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm ${
-                  errors.mobile ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm ${errors.mobile ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="+91 "
               />
               {errors.mobile && (

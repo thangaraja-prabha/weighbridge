@@ -194,7 +194,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 router.put('/:id', async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { fwt, lwt, swt, mode, vid, mid, sid, cid, driver, remarks, fwtdt } = req.body;
+        const { fwt, lwt, swt, mode, vid, mid, sid, cid, driver, remarks, fwtdt, swtdt } = req.body;
         const userApiKey = req.user?.apikey;
 
         if (!userApiKey) {
@@ -230,6 +230,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
         if (driver !== undefined) updateData.driver = driver;
         if (remarks !== undefined) updateData.remarks = remarks;
         if (fwtdt !== undefined) updateData.fwtdt = fwtdt;
+        if (swtdt !== undefined) updateData.swtdt = swtdt;
 
         await db.update(wlog).set(updateData).where(and(eq(wlog.id, parseInt(id)), eq(wlog.apikey, userApiKey)));
 

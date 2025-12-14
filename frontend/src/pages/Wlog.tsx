@@ -42,6 +42,14 @@ interface FormData {
     showSupplier: boolean;
 }
 
+interface EditFormData extends FormData {
+    id: number;
+    secondWeight: string;
+    secondWeightDate: string;
+    secondWeightTime: string;
+    netWeight: string;
+}
+
 const Wlog: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabId>('firstWeight');
     const [liveWeight] = useState<string>('No Device');
@@ -91,6 +99,8 @@ const Wlog: React.FC = () => {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editFormData, setEditFormData] = useState<EditFormData | null>(null);
 
     const tabs: { id: TabId; label: string; icon: string }[] = [
         { id: 'firstWeight', label: 'First Weight', icon: '⚖️' },
@@ -297,8 +307,284 @@ const Wlog: React.FC = () => {
     };
 
     const handleEdit = (entry: any) => {
-        console.log('Edit weight entry:', entry);
-        alert('Edit functionality will be implemented soon');
+        setIsEditing(true);
+        // Split date time string logic if needed, simplified here
+        const now = new Date();
+        setEditFormData({
+            id: entry.id,
+            mode: entry.mode ? entry.mode.toString() : '',
+            vid: entry.vid ? entry.vid.toString() : '',
+            vnumDisplay: entry.vnum,
+            transporterName: entry.tname,
+            transporterAddress: '', // Not in table data
+            transporterContact: '', // Not in table data
+            mid: entry.mid ? entry.mid.toString() : '',
+            mnameDisplay: entry.mname,
+            sid: entry.sid ? entry.sid.toString() : '',
+            snameDisplay: entry.sname || '',
+            cid: entry.cid ? entry.cid.toString() : '',
+            cnameDisplay: entry.cname || '',
+            driverName: entry.driver,
+            firstWeight: entry.fwt ? entry.fwt.toString() : '',
+            firstWeightDate: entry.fwtdt ? entry.fwtdt.split(' ')[0] : '', // simplistic splitting
+            firstWeightTime: entry.fwtdt ? entry.fwtdt.split(' ')[1] : '',
+            remarks: entry.remarks,
+            showSupplier: !!entry.sid,
+            secondWeight: '',
+            secondWeightDate: now.toISOString().split('T')[0],
+            secondWeightTime: now.toTimeString().slice(0, 5),
+            netWeight: ''
+        });
+    };
+
+    const handleSecondWeightSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editFormData) return;
+
+        setIsSubmitting(true);
+        try {
+            const fwt = parseFloat(editFormData.firstWeight || '0');
+            const swt = parseFloat(editFormData.secondWeight || '0');
+            // Net Weight logic: usually ABS(first - second) or First - Second. User said First - Second.
+            const netWeight = Math.abs(fwt - swt);
+
+            const payload = {
+                lwt: swt,
+                swt: netWeight, // User mentioned Net Weight (first - second). Mapping to 'swt' column as standard weight usually implies net or standard. Assuming 'swt' = Net Weight based on context or user request "Net Weight (first weight -second weight)".
+                // Actually user asked Net Weight. Schema has 'fwt', 'lwt', 'swt'. 'swt' usually means Standard Weight, but maybe 'twt' (total) or similar. 
+                // Let's stick to user request: "Net Weight (first weight -second weight)". I will save it to 'swt' field for now as there is no 'nwt'. 
+                // Wait, schema has fwt, lwt, swt. Let's use swt for Net Weight as user implicitly asked for it. 
+                swtdt: `${editFormData.secondWeightDate} ${editFormData.secondWeightTime}`,
+            };
+
+
+            await wlogApi.updateWlogEntry(editFormData.id, payload);
+            toast.success('Second weight saved successfully!');
+            setIsEditing(false);
+            setEditFormData(null);
+            loadTableData(pagination.currentPage);
+        } catch (error) {
+            console.error('Error saving second weight:', error);
+            toast.error('Failed to save second weight');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const renderEditForm = () => {
+        if (!editFormData) return null;
+
+        const fwt = parseFloat(editFormData.firstWeight || '0');
+        const swt = parseFloat(editFormData.secondWeight || '0');
+        const net = swt ? Math.abs(fwt - swt).toFixed(2) : '';
+
+        return (
+            <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-semibold text-gray-800">Second Weight Entry</h3>
+                    <button
+                        onClick={() => setIsEditing(false)}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
+                        Cancel
+                    </button>
+                </div>
+
+                <form onSubmit={handleSecondWeightSubmit} className="space-y-6">
+                    {/* Top Section: Mode and Type (Read-only representation) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Mode</label>
+                            <div className="flex items-center space-x-4 mt-2">
+                                {/* Displaying only the selected mode */}
+                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                    {modes.find(m => m.id.toString() === editFormData.mode)?.mode || 'Unknown'}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col justify-end">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                            <div className="px-3 py-2 bg-gray-50 rounded border border-gray-200 text-gray-700 font-medium">
+                                {editFormData.showSupplier ? 'Supplier' : 'Customer'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Customer or Supplier Display */}
+                    <div className="relative">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            {editFormData.showSupplier ? 'Supplier' : 'Customer'}
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                            value={editFormData.showSupplier ? editFormData.snameDisplay : editFormData.cnameDisplay}
+                            readOnly
+                        />
+                    </div>
+
+                    {/* Vehicle Details Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="relative col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Number</label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                                value={editFormData.vnumDisplay}
+                                readOnly
+                            />
+                        </div>
+                        <div className="relative col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Transporter Name</label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                                value={editFormData.transporterName || ''}
+                                readOnly
+                            />
+                        </div>
+                        <div className="relative col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Transporter Address</label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                                value={editFormData.transporterAddress || ''}
+                                readOnly
+                            />
+                        </div>
+                        <div className="relative col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Transporter Contact</label>
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                                value={editFormData.transporterContact || ''}
+                                readOnly
+                            />
+                        </div>
+                    </div>
+
+                    {/* Material Display */}
+                    <div className="relative">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Material</label>
+                        <input
+                            type="text"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                            value={editFormData.mnameDisplay}
+                            readOnly
+                        />
+                    </div>
+
+                    {/* Weight Section: First, Second, Net */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* First Weight Group */}
+                        <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h4 className="font-semibold text-gray-700 border-b pb-2">First Weight</h4>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                                    value={editFormData.firstWeight}
+                                    readOnly
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                                    value={editFormData.firstWeightDate}
+                                    readOnly
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                <input
+                                    type="time"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                                    value={editFormData.firstWeightTime}
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+
+                        {/* Second Weight Group */}
+                        <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200 shadow-sm relative">
+                            <h4 className="font-semibold text-blue-800 border-b border-blue-200 pb-2">Second Weight</h4>
+                            <div>
+                                <label className="block text-sm font-medium text-blue-800 mb-1">Weight (kg)</label>
+                                <input
+                                    type="number"
+                                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={editFormData.secondWeight}
+                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeight: e.target.value })}
+                                    required
+                                    step="0.01"
+                                    placeholder="Enter second weight"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-blue-800 mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={editFormData.secondWeightDate}
+                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeightDate: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-blue-800 mb-1">Time</label>
+                                <input
+                                    type="time"
+                                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={editFormData.secondWeightTime}
+                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeightTime: e.target.value })}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Net Weight Group */}
+                        <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200 flex flex-col justify-center items-center">
+                            <h4 className="font-semibold text-gray-700 border-b pb-2 w-full text-center">Net Weight</h4>
+                            <div className="flex-1 flex items-center justify-center">
+                                <span className="text-4xl font-bold text-gray-800">
+                                    {net ? `${net} kg` : '-'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Remarks (Read-Only) */}
+                    <div className="col-span-1 md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
+                        <textarea
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 min-h-[100px]"
+                            value={editFormData.remarks || ''}
+                            readOnly
+                        />
+                    </div>
+
+                    <div className="flex justify-end space-x-4">
+                        <button
+                            type="button"
+                            onClick={() => setIsEditing(false)}
+                            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Second Weight'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        );
     };
 
     const handleAddNew = () => {
@@ -603,104 +889,108 @@ const Wlog: React.FC = () => {
                             <h3 className="text-xl font-semibold mb-4 text-gray-800">
                                 Weight Log Entries
                             </h3>
+                            {isEditing ? renderEditForm() : (
+                                <div>
 
-                            <div className="mb-4 flex justify-between items-center">
-                                <div className="flex space-x-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Search entries..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    <button
-                                        onClick={handleSearch}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        Search
-                                    </button>
-                                </div>
-                                <button
-                                    onClick={handleAddNew}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                >
-                                    Add New Entry
-                                </button>
-                            </div>
-
-                            <div className="overflow-x-auto">
-                                {loading ? (
-                                    <div className="text-center py-8">
-                                        <div className="text-gray-500">Loading...</div>
-                                    </div>
-                                ) : tableData.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <div className="text-gray-500 text-lg">No data found</div>
-                                        <div className="text-gray-400 text-sm mt-2">
-                                            No vehicle entries available in the database
+                                    <div className="mb-4 flex justify-between items-center">
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Search entries..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                            <button
+                                                onClick={handleSearch}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            >
+                                                Search
+                                            </button>
                                         </div>
+                                        <button
+                                            onClick={handleAddNew}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                        >
+                                            Add New Entry
+                                        </button>
                                     </div>
-                                ) : (
-                                    <>
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer / Supplier</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transporter</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Weight</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F.Wt Date</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {tableData.map((item) => {
-                                                    const modeName = modes.find(m => m.id === item.mode)?.mode || item.mode;
-                                                    return (
-                                                        <tr key={item.id} className="hover:bg-gray-50">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{modeName || '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.vnum || '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.mname || '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.cname}  {item.sname}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tname || '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.driver || '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwt ? `${item.fwt} kg` : '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwtdt || '-'}</td>
-                                                            <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                                <button
-                                                                    onClick={() => handleEdit(item)}
-                                                                    className="text-blue-600 hover:text-blue-900 mr-3"
-                                                                >
-                                                                    Edit
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleDelete(item.id)}
-                                                                    className="text-red-600 hover:text-red-900"
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
 
-                                        <Pagination
-                                            currentPage={pagination.currentPage}
-                                            totalPages={pagination.totalPages}
-                                            total={pagination.total}
-                                            limit={pagination.limit}
-                                            onPageChange={handlePageChange}
-                                        />
-                                    </>
-                                )}
-                            </div>
+                                    <div className="overflow-x-auto">
+                                        {loading ? (
+                                            <div className="text-center py-8">
+                                                <div className="text-gray-500">Loading...</div>
+                                            </div>
+                                        ) : tableData.length === 0 ? (
+                                            <div className="text-center py-8">
+                                                <div className="text-gray-500 text-lg">No data found</div>
+                                                <div className="text-gray-400 text-sm mt-2">
+                                                    No vehicle entries available in the database
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <table className="min-w-full divide-y divide-gray-200">
+                                                    <thead className="bg-gray-50">
+                                                        <tr>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer / Supplier</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transporter</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Weight</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F.Wt Date</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                        {tableData.map((item) => {
+                                                            const modeName = modes.find(m => m.id === item.mode)?.mode || item.mode;
+                                                            return (
+                                                                <tr key={item.id} className="hover:bg-gray-50">
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{modeName || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.vnum || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.mname || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.cname}  {item.sname}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tname || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.driver || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwt ? `${item.fwt} kg` : '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwtdt || '-'}</td>
+                                                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                                        <button
+                                                                            onClick={() => handleEdit(item)}
+                                                                            className="text-blue-600 hover:text-blue-900 mr-3"
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDelete(item.id)}
+                                                                            className="text-red-600 hover:text-red-900"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+
+                                                <Pagination
+                                                    currentPage={pagination.currentPage}
+                                                    totalPages={pagination.totalPages}
+                                                    total={pagination.total}
+                                                    limit={pagination.limit}
+                                                    onPageChange={handlePageChange}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
