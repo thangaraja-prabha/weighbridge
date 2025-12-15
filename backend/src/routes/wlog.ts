@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { wlog, materials, tdetails, customers, suppliers } from '../db/schema';
+import { wlog, materials, tdetails, customers, suppliers, vdetails } from '../db/schema';
 import { eq, like, or, and, sql, desc, isNotNull } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
@@ -34,8 +34,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
                 like(materials.mname, `%${search}%`),
                 like(tdetails.tname, `%${search}%`),
                 like(customers.cname, `%${search}%`),
-                // Search by vehicle ID (as string)
-                sql`CAST(${wlog.vid} AS CHAR) LIKE ${`%${search}%`}`
+                like(vdetails.vnum, `%${search}%`)
             )
         ) : baseCondition;
 
@@ -59,7 +58,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
                 lwt: wlog.lwt,
                 swt: wlog.swt,
                 mode: wlog.mode,
-                vnum: isNotNull(tdetails.tnum) ? tdetails.tnum : sql<string>`CAST(${wlog.vid} AS CHAR)`,
+                vnum: vdetails.vnum,
                 mname: materials.mname,
                 tname: tdetails.tname,
                 sname: suppliers.sname,
@@ -108,7 +107,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
                 lwt: wlog.lwt,
                 swt: wlog.swt,
                 mode: wlog.mode,
-                vnum: isNotNull(tdetails.tnum) ? tdetails.tnum : sql<string>`CAST(${wlog.vid} AS CHAR)`,
+                vnum: vdetails.vnum,
                 mname: materials.mname,
                 tname: tdetails.tname,
                 sname: suppliers.sname,
@@ -143,7 +142,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 // Create new weight log entry
 router.post('/', async (req: AuthRequest, res: Response) => {
     try {
-        const { fwt, lwt, swt, mode, vid, mid, sid, cid, driver, remarks, fwtdt } = req.body;
+        const { fwt, lwt, swt, mode, vid, mid, sid, cid, driver, remarks, fwtdt, tid } = req.body;
         const userApiKey = req.user?.apikey;
         const userId = req.user?.id;
 
@@ -168,7 +167,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             lwt: lwt ? parseInt(lwt) : null,
             swt: swt ? parseInt(swt) : null,
             mode: mode ? parseInt(mode) : null,
+
             vid: parseInt(vid),
+            tid: tid ? parseInt(tid) : null,
             mid: parseInt(mid),
             sid: sid ? parseInt(sid) : null,
             cid: cid ? parseInt(cid) : null,
@@ -194,7 +195,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 router.put('/:id', async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { fwt, lwt, swt, mode, vid, mid, sid, cid, driver, remarks, fwtdt, swtdt } = req.body;
+        const { fwt, lwt, swt, mode, vid, tid, mid, sid, cid, driver, remarks, fwtdt, swtdt } = req.body;
         const userApiKey = req.user?.apikey;
 
         if (!userApiKey) {
@@ -224,6 +225,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
         if (swt !== undefined) updateData.swt = parseInt(swt);
         if (mode !== undefined) updateData.mode = parseInt(mode);
         if (vid !== undefined) updateData.vid = parseInt(vid);
+        if (tid !== undefined) updateData.tid = parseInt(tid);
         if (mid !== undefined) updateData.mid = parseInt(mid);
         if (sid !== undefined) updateData.sid = parseInt(sid);
         if (cid !== undefined) updateData.cid = parseInt(cid);

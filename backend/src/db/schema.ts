@@ -69,7 +69,8 @@ export const wlog = mysqlTable('wlog', {
     udt: varchar('udt', { length: 20 }),
     driver: varchar('driver', { length: 50 }),
     remarks: text('remarks'),
-    fwtdt: varchar('fwtdt', { length: 30 })
+    fwtdt: varchar('fwtdt', { length: 30 }),
+    tid: int('tid')
 });
 
 // Legacy wlog table for backward compatibility
@@ -142,6 +143,14 @@ export const suppliers = mysqlTable('suppliers', {
     snum: varchar('snum', { length: 30 }),
     srem: text('srem'),
     apikey: varchar('apikey', { length: 10 }),
+    uid: int('uid'),
+    udt: varchar('udt', { length: 20 })
+});
+
+export const vdetails = mysqlTable('vdetails', {
+    id: int('id').primaryKey().autoincrement(),
+    vnum: varchar('vnum', { length: 20 }),
+
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });
@@ -263,6 +272,8 @@ export type Wlog = typeof wlog.$inferSelect;
 export type NewWlog = typeof wlog.$inferInsert;
 export type WlogLegacy = typeof wlog_legacy.$inferSelect;
 export type NewWlogLegacy = typeof wlog_legacy.$inferInsert;
+export type Vdetail = typeof vdetails.$inferSelect;
+export type NewVdetail = typeof vdetails.$inferInsert;
 
 export const kyc_records = mysqlTable('kyc_records', {
     id: int('id').primaryKey().autoincrement(),

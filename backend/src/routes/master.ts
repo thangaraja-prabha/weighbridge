@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { depts, shifts, nopt, mdetail, vdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails, modes } from '../db/schema';
+import { depts, shifts, nopt, mdetail, vdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails, modes, vdetails } from '../db/schema';
 import { eq, desc, like, sql, and } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
@@ -248,6 +248,35 @@ router.get('/transporters/search', async (req: Request, res: Response) => {
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
+// Vehicle search endpoint for autocomplete
+router.get('/vehicles/search', async (req: Request, res: Response) => {
+    try {
+        const { q } = req.query;
+        const userApiKey = (req as any).user?.apikey;
+
+        if (!q || typeof q !== 'string') {
+            return res.status(400).json({ error: 'Search query is required' });
+        }
+
+        let conditions = [];
+
+        // Filter by company API key
+
+
+        // Search by vehicle number
+        conditions.push(like(vdetails.vnum, `%${q}%`));
+
+        const whereCondition = conditions.length > 0 ? conditions.length === 1 ? conditions[0] : and(...conditions) : undefined;
+
+        const result = await db.select({
+            id: vdetails.id,
+            vnum: vdetails.vnum,
+        }).from(vdetails).where(whereCondition).limit(10);
+
+        res.json(result);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/transporters', async (req: Request, res: Response) => {
     try {
         const { tnum, tname, tadd, tmob, trem } = req.body;
@@ -358,7 +387,9 @@ router.delete('/:type/:id', async (req: Request, res: Response) => {
         else if (type === 'materials') table = materials;
         else if (type === 'customers') table = customers;
         else if (type === 'suppliers') table = suppliers;
+        else if (type === 'suppliers') table = suppliers;
         else if (type === 'transporters') table = tdetails;
+        else if (type === 'vehicles') table = vdetails;
         else return res.status(400).json({ error: 'Invalid type' });
 
         await db.delete(table).where(eq(table.id, parseInt(id)));
