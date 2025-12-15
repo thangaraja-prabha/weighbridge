@@ -111,6 +111,35 @@ class WlogApi {
 
         return response.json();
     }
+
+    // Download PDF ticket
+    async downloadPDF(id: number): Promise<void> {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/wlog/${id}/pdf`, {
+            headers: {
+                ...(token && { Authorization: `Bearer ${token}` })
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to download PDF: ${response.statusText}`);
+        }
+
+        // Create blob from response
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        // Create temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ticket-${id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    }
 }
 
 export const wlogApi = new WlogApi();

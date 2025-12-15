@@ -369,6 +369,16 @@ const Wlog: React.FC = () => {
         });
     };
 
+    const handlePrint = async (id: number) => {
+        try {
+            await wlogApi.downloadPDF(id);
+            toast.success('PDF downloaded successfully!');
+        } catch (error) {
+            console.error('Error downloading PDF:', error);
+            toast.error('Failed to download PDF ticket');
+        }
+    };
+
     const handleSecondWeightSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editFormData) return;
@@ -1034,104 +1044,98 @@ const Wlog: React.FC = () => {
                     <div className="space-y-6">
                         <div className="bg-white rounded-lg shadow-md p-6">
                             <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                                Summary Settings
+                                Summary
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {isEditing ? renderEditForm() : (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Report Format
-                                    </label>
-                                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option>Standard</option>
-                                        <option>Detailed</option>
-                                        <option>Compact</option>
-                                        <option>Custom</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Date Format
-                                    </label>
-                                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option>DD/MM/YYYY</option>
-                                        <option>MM/DD/YYYY</option>
-                                        <option>YYYY-MM-DD</option>
-                                        <option>Custom</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Decimal Places
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="4"
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        placeholder="Number of decimal places"
-                                        defaultValue={2}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Time Zone
-                                    </label>
-                                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option>UTC</option>
-                                        <option>Local Time</option>
-                                        <option>GMT+5:30</option>
-                                        <option>GMT-5:00</option>
-                                    </select>
-                                </div>
-                            </div>
 
-                            <div className="mt-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Display Options
-                                </label>
-                                <div className="space-y-3">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            className="mr-2 rounded text-blue-600"
-                                            defaultChecked
-                                        />
-                                        <span className="text-sm text-gray-700">
-                                            Show vehicle information
-                                        </span>
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            className="mr-2 rounded text-blue-600"
-                                            defaultChecked
-                                        />
-                                        <span className="text-sm text-gray-700">
-                                            Show weight calculations
-                                        </span>
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            className="mr-2 rounded text-blue-600"
-                                            defaultChecked
-                                        />
-                                        <span className="text-sm text-gray-700">
-                                            Include timestamp on all entries
-                                        </span>
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input type="checkbox" className="mr-2 rounded text-blue-600" />
-                                        <span className="text-sm text-gray-700">Enable export to PDF</span>
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input type="checkbox" className="mr-2 rounded text-blue-600" />
-                                        <span className="text-sm text-gray-700">
-                                            Include charts in summary
-                                        </span>
-                                    </label>
+                                    <div className="mb-4 flex justify-between items-center">
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Search entries..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                            <button
+                                                onClick={handleSearch}
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            >
+                                                Search
+                                            </button>
+                                        </div>
+
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        {loading ? (
+                                            <div className="text-center py-8">
+                                                <div className="text-gray-500">Loading...</div>
+                                            </div>
+                                        ) : tableData.length === 0 ? (
+                                            <div className="text-center py-8">
+                                                <div className="text-gray-500 text-lg">No data found</div>
+                                                <div className="text-gray-400 text-sm mt-2">
+                                                    No vehicle entries available in the database
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <table className="min-w-full divide-y divide-gray-200">
+                                                    <thead className="bg-gray-50">
+                                                        <tr>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer / Supplier</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transporter</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Weight</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F.Wt Date</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                        {tableData.map((item) => {
+                                                            const modeName = modes.find(m => m.id === item.mode)?.mode || item.mode;
+                                                            return (
+                                                                <tr key={item.id} className="hover:bg-gray-50">
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{modeName || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.vnum || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.mname || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.cname}  {item.sname}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tname || '-'}</td>
+
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwt ? `${item.fwt} kg` : '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwtdt || '-'}</td>
+                                                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                                        <button
+                                                                            onClick={() => handlePrint(item.id)}
+                                                                            className="text-green-600 hover:text-green-900"
+                                                                        >
+                                                                            Print
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </tbody>
+                                                </table>
+
+                                                <Pagination
+                                                    currentPage={pagination.currentPage}
+                                                    totalPages={pagination.totalPages}
+                                                    total={pagination.total}
+                                                    limit={pagination.limit}
+                                                    onPageChange={handlePageChange}
+                                                />
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 );
