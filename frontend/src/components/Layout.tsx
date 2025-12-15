@@ -132,16 +132,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         );
     };
 
-    const SubMenuItem = ({ to, label }: any) => (
-        <li>
-            <button
-                onClick={(e) => { e.stopPropagation(); navigate(to); }}
-                className="w-full text-left px-4 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-            >
-                {label}
-            </button>
-        </li>
-    );
+    /* const SubMenuItem = ({ to, label }: any) => (
+         <li>
+             <button
+                 onClick={(e) => { e.stopPropagation(); navigate(to); }}
+                 className="w-full text-left px-4 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+             >
+                 {label}
+             </button>
+         </li>
+     );*/
 
     return (
         <div className="min-h-screen bg-gray-100 flex overflow-hidden">

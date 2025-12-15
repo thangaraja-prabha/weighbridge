@@ -52,8 +52,7 @@ const Login: React.FC = () => {
                     personName: formData.personName,
                     email: formData.email,
                     mobile: formData.mobile,
-                    rights: formData.rights,
-                    smsOpt: formData.smsOpt
+
                 });
 
                 setIsLogin(true);

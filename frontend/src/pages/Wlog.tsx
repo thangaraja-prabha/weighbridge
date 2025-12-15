@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { wlogApi } from '../api/wlog';
 import { masterApi } from '../api/master';
+
 import Pagination from '../components/Pagination';
 import Switch from 'react-switch';
 
@@ -18,6 +19,8 @@ interface SuggestionsState {
     vehicles: any[];
     materials: any[];
     suppliers: any[];
+    transporters: any[];
+
     customers: any[];
 }
 
@@ -25,6 +28,8 @@ interface FormData {
     mode: string;
     vid: string;
     vnumDisplay: string;
+
+    tid: string;
     transporterName: string;
     transporterAddress: string;
     transporterContact: string;
@@ -74,6 +79,7 @@ const Wlog: React.FC = () => {
         mode: '',
         vid: '',
         vnumDisplay: '',
+        tid: '',
         transporterName: '',
         transporterAddress: '',
         transporterContact: '',
@@ -95,6 +101,8 @@ const Wlog: React.FC = () => {
         vehicles: [],
         materials: [],
         suppliers: [],
+        transporters: [],
+
         customers: [],
     });
 
@@ -150,13 +158,28 @@ const Wlog: React.FC = () => {
         setFormData((prev) => ({ ...prev, vnumDisplay: query }));
         if (query.length > 1) {
             try {
-                const results = await masterApi.searchTransporters(query);
+                const results = await masterApi.searchVehicles(query);
                 setSuggestions((prev) => ({ ...prev, vehicles: results }));
             } catch (error) {
                 console.error('Error searching vehicles:', error);
             }
         } else {
             setSuggestions((prev) => ({ ...prev, vehicles: [] }));
+        }
+    };
+
+
+    const handleTransporterSearch = async (query: string) => {
+        setFormData((prev) => ({ ...prev, transporterName: query }));
+        if (query.length > 1) {
+            try {
+                const results = await masterApi.searchTransporters(query);
+                setSuggestions((prev) => ({ ...prev, transporters: results }));
+            } catch (error) {
+                console.error('Error searching transporters:', error);
+            }
+        } else {
+            setSuggestions((prev) => ({ ...prev, transporters: [] }));
         }
     };
 
@@ -221,12 +244,20 @@ const Wlog: React.FC = () => {
         setFormData((prev) => ({
             ...prev,
             vid: vehicle.id,
-            vnumDisplay: vehicle.tnum || vehicle.tname,
-            transporterName: vehicle.tname || '',
-            transporterAddress: vehicle.tadd || '',
-            transporterContact: vehicle.tmob || '',
+            vnumDisplay: vehicle.vnum,
         }));
         setSuggestions((prev) => ({ ...prev, vehicles: [] }));
+    };
+
+    const selectTransporter = (transporter: any) => {
+        setFormData((prev) => ({
+            ...prev,
+            tid: transporter.id,
+            transporterName: transporter.tname,
+            transporterAddress: transporter.tadd || '',
+            transporterContact: transporter.tmob || '',
+        }));
+        setSuggestions((prev) => ({ ...prev, transporters: [] }));
     };
 
     const handleFirstWeightSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -246,6 +277,7 @@ const Wlog: React.FC = () => {
                 vid: parseInt(formData.vid, 10),
                 mid: parseInt(formData.mid, 10),
                 mode: parseInt(formData.mode, 10),
+                tid: formData.tid ? parseInt(formData.tid, 10) : undefined,
                 sid: formData.sid ? parseInt(formData.sid, 10) : undefined,
                 cid: formData.cid ? parseInt(formData.cid, 10) : undefined,
                 fwt: !isNaN(manualFirstWeight) && manualFirstWeight > 0 ? manualFirstWeight : liveWeightVal,
@@ -261,6 +293,8 @@ const Wlog: React.FC = () => {
                 mode: '',
                 vid: '',
                 vnumDisplay: '',
+
+                tid: '',
                 transporterName: '',
                 transporterAddress: '',
                 transporterContact: '',
@@ -315,6 +349,7 @@ const Wlog: React.FC = () => {
             mode: entry.mode ? entry.mode.toString() : '',
             vid: entry.vid ? entry.vid.toString() : '',
             vnumDisplay: entry.vnum,
+            tid: entry.tid ? entry.tid.toString() : '',
             transporterName: entry.tname,
             transporterAddress: '', // Not in table data
             transporterContact: '', // Not in table data
@@ -721,7 +756,7 @@ const Wlog: React.FC = () => {
                                                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                                                         onClick={() => selectVehicle(v)}
                                                     >
-                                                        {v.tnum} - {v.tname}
+                                                        {v.vnum}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -735,10 +770,24 @@ const Wlog: React.FC = () => {
                                         <input
                                             type="text"
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Transporter name"
+                                            placeholder="Search transporter..."
                                             value={formData.transporterName || ''}
-                                            readOnly
+                                            onChange={(e) => handleTransporterSearch(e.target.value)}
+                                            required
                                         />
+                                        {suggestions.transporters.length > 0 && (
+                                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                {suggestions.transporters.map((t: any) => (
+                                                    <li
+                                                        key={t.id}
+                                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                                        onClick={() => selectTransporter(t)}
+                                                    >
+                                                        {t.tname}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
                                     </div>
 
                                     <div className="relative col-span-1">

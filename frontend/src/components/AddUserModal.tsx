@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { userApi, Role, Privilege } from '../api/user';
 import Select from 'react-select';
 import { handleMobileInputChange, getMobileValidationError, formatMobileNumber } from '../utils/validation';
 
 // Reusable Checkbox component
-const Checkbox = ({
+/*const Checkbox = ({
   checked,
   onChange,
   label,
@@ -25,7 +25,7 @@ const Checkbox = ({
     />
     <span className="text-sm text-gray-700">{label}</span>
   </label>
-);
+);*/
 
 interface AddUserModalProps {
   isOpen: boolean;

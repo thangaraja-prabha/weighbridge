@@ -60,12 +60,34 @@ export const masterApi = {
         return response.json();
     },
 
+    // Get transporters with search
+    getTransporters: async (search: string = '', page = 1, limit = 10) => {
+        const params = new URLSearchParams({
+            search,
+            page: page.toString(),
+            limit: limit.toString()
+        });
+        const response = await fetch(`${API_BASE_URL}/master/transporters?${params}`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch transporters');
+        return response.json();
+    },
+
     // Get transporters (for autocomplete, using search endpoint)
     searchTransporters: async (query: string) => {
         const response = await fetch(`${API_BASE_URL}/master/transporters/search?q=${encodeURIComponent(query)}`, {
             headers: getHeaders()
         });
         if (!response.ok) throw new Error('Failed to search transporters');
+        return response.json();
+    },
+
+    searchVehicles: async (query: string) => {
+        const response = await fetch(`${API_BASE_URL}/master/vehicles/search?q=${encodeURIComponent(query)}`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to search vehicles');
         return response.json();
     }
 };
