@@ -32,9 +32,9 @@ router.get('/', async (req: AuthRequest, res: Response) => {
             or(
                 // Search by mapped names
                 like(materials.mname, `%${search}%`),
-                like(tdetails.tname, `%${search}%`),
                 like(customers.cname, `%${search}%`),
-                like(vdetails.vnum, `%${search}%`)
+                like(vdetails.vnum, `%${search}%`),
+                like(tdetails.tname, `%${search}%`)
             )
         ) : baseCondition;
 
@@ -43,7 +43,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
             .select({ count: sql`count(*)` })
             .from(wlog)
             .leftJoin(materials, eq(wlog.mid, materials.id))
-            .leftJoin(tdetails, eq(wlog.vid, tdetails.id))
+            .leftJoin(vdetails, eq(wlog.vid, vdetails.id))
+            .leftJoin(tdetails, eq(wlog.tid, tdetails.id))
             .leftJoin(suppliers, eq(wlog.sid, suppliers.id))
             .leftJoin(customers, eq(wlog.cid, customers.id))
             .where(whereClause);
@@ -58,21 +59,24 @@ router.get('/', async (req: AuthRequest, res: Response) => {
                 lwt: wlog.lwt,
                 swt: wlog.swt,
                 mode: wlog.mode,
-                vnum: vdetails.vnum,
+                tid: wlog.tid,
+                vid: wlog.vid,
                 mname: materials.mname,
+                vnum: vdetails.vnum,
                 tname: tdetails.tname,
                 sname: suppliers.sname,
                 cname: customers.cname,
                 apikey: wlog.apikey,
                 uid: wlog.uid,
                 udt: wlog.udt,
-                driver: wlog.driver,
+
                 remarks: wlog.remarks,
                 fwtdt: wlog.fwtdt
             })
             .from(wlog)
             .leftJoin(materials, eq(wlog.mid, materials.id))
-            .leftJoin(tdetails, eq(wlog.vid, tdetails.id))
+            .leftJoin(vdetails, eq(wlog.vid, vdetails.id))
+            .leftJoin(tdetails, eq(wlog.tid, tdetails.id))
             .leftJoin(suppliers, eq(wlog.sid, suppliers.id))
             .leftJoin(customers, eq(wlog.cid, customers.id))
             .where(whereClause)
@@ -107,21 +111,24 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
                 lwt: wlog.lwt,
                 swt: wlog.swt,
                 mode: wlog.mode,
-                vnum: vdetails.vnum,
+                tid: wlog.tid,
+                vid: wlog.vid,
                 mname: materials.mname,
+                vnum: vdetails.vnum,
                 tname: tdetails.tname,
                 sname: suppliers.sname,
                 cname: customers.cname,
                 apikey: wlog.apikey,
                 uid: wlog.uid,
                 udt: wlog.udt,
-                driver: wlog.driver,
+
                 remarks: wlog.remarks,
                 fwtdt: wlog.fwtdt
             })
             .from(wlog)
             .leftJoin(materials, eq(wlog.mid, materials.id))
-            .leftJoin(tdetails, eq(wlog.vid, tdetails.id))
+            .leftJoin(vdetails, eq(wlog.vid, vdetails.id))
+            .leftJoin(tdetails, eq(wlog.tid, tdetails.id))
             .leftJoin(suppliers, eq(wlog.sid, suppliers.id))
             .leftJoin(customers, eq(wlog.cid, customers.id))
             .where(and(eq(wlog.id, parseInt(id)), eq(wlog.apikey, userApiKey)));
@@ -142,7 +149,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 // Create new weight log entry
 router.post('/', async (req: AuthRequest, res: Response) => {
     try {
-        const { fwt, lwt, swt, mode, vid, mid, sid, cid, driver, remarks, fwtdt, tid } = req.body;
+        const { fwt, lwt, swt, mode, vid, mid, sid, cid, remarks, fwtdt, tid } = req.body;
         const userApiKey = req.user?.apikey;
         const userId = req.user?.id;
 
@@ -162,13 +169,26 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         }
 
         // Create new weight log entry
+        // Fetch associated names
+        let vnumVal = null;
+        if (vid) {
+            const v = await db.select().from(vdetails).where(eq(vdetails.id, parseInt(vid)));
+            if (v.length > 0) vnumVal = v[0].vnum;
+        }
+
+        let tnameVal = null;
+        if (tid) {
+            const t = await db.select().from(tdetails).where(eq(tdetails.id, parseInt(tid)));
+            if (t.length > 0) tnameVal = t[0].tname;
+        }
+
+        // Create new weight log entry
         const result = await db.insert(wlog).values({
             fwt: fwt ? parseInt(fwt) : null,
             lwt: lwt ? parseInt(lwt) : null,
             swt: swt ? parseInt(swt) : null,
             mode: mode ? parseInt(mode) : null,
-
-            vid: parseInt(vid),
+            vid: vid ? parseInt(vid) : null,
             tid: tid ? parseInt(tid) : null,
             mid: parseInt(mid),
             sid: sid ? parseInt(sid) : null,
@@ -176,7 +196,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             apikey: userApiKey,
             uid: userId || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-            driver: driver || null,
+
             remarks: remarks || null,
             fwtdt: fwtdt || null
         });
@@ -195,7 +215,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 router.put('/:id', async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
-        const { fwt, lwt, swt, mode, vid, tid, mid, sid, cid, driver, remarks, fwtdt, swtdt } = req.body;
+        const { fwt, lwt, swt, mode, vid, tid, mid, sid, cid, remarks, fwtdt, swtdt, lwtdt } = req.body;
         const userApiKey = req.user?.apikey;
 
         if (!userApiKey) {
@@ -221,17 +241,30 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
         };
 
         if (fwt !== undefined) updateData.fwt = parseInt(fwt);
-        if (lwt !== undefined) updateData.lwt = parseInt(lwt);
+        if (lwt !== undefined) {
+            updateData.lwt = parseInt(lwt);
+            updateData.swt = null;
+        }
         if (swt !== undefined) updateData.swt = parseInt(swt);
         if (mode !== undefined) updateData.mode = parseInt(mode);
-        if (vid !== undefined) updateData.vid = parseInt(vid);
-        if (tid !== undefined) updateData.tid = parseInt(tid);
+
+        if (vid !== undefined) {
+            updateData.vid = parseInt(vid);
+            const v = await db.select().from(vdetails).where(eq(vdetails.id, parseInt(vid)));
+            if (v.length > 0) updateData.vnum = v[0].vnum;
+        }
+        if (tid !== undefined) {
+            updateData.tid = parseInt(tid);
+            const t = await db.select().from(tdetails).where(eq(tdetails.id, parseInt(tid)));
+            if (t.length > 0) updateData.tname = t[0].tname;
+        }
+
         if (mid !== undefined) updateData.mid = parseInt(mid);
         if (sid !== undefined) updateData.sid = parseInt(sid);
         if (cid !== undefined) updateData.cid = parseInt(cid);
-        if (driver !== undefined) updateData.driver = driver;
         if (remarks !== undefined) updateData.remarks = remarks;
         if (fwtdt !== undefined) updateData.fwtdt = fwtdt;
+        if (lwtdt !== undefined) updateData.lwtdt = lwtdt;
         if (swtdt !== undefined) updateData.swtdt = swtdt;
 
         await db.update(wlog).set(updateData).where(and(eq(wlog.id, parseInt(id)), eq(wlog.apikey, userApiKey)));

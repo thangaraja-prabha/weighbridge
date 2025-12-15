@@ -39,7 +39,6 @@ interface FormData {
     snameDisplay: string;
     cid: string;
     cnameDisplay: string;
-    driverName: string;
     firstWeight: string;
     firstWeightDate: string;
     firstWeightTime: string;
@@ -89,7 +88,6 @@ const Wlog: React.FC = () => {
         snameDisplay: '',
         cid: '',
         cnameDisplay: '',
-        driverName: '',
         firstWeight: '',
         firstWeightDate: new Date().toISOString().split('T')[0],
         firstWeightTime: new Date().toTimeString().slice(0, 5),
@@ -281,7 +279,7 @@ const Wlog: React.FC = () => {
                 sid: formData.sid ? parseInt(formData.sid, 10) : undefined,
                 cid: formData.cid ? parseInt(formData.cid, 10) : undefined,
                 fwt: !isNaN(manualFirstWeight) && manualFirstWeight > 0 ? manualFirstWeight : liveWeightVal,
-                driver: formData.driverName,
+
                 remarks: formData.remarks,
                 fwtdt: `${formData.firstWeightDate} ${formData.firstWeightTime}`,
             };
@@ -304,7 +302,6 @@ const Wlog: React.FC = () => {
                 snameDisplay: '',
                 cid: '',
                 cnameDisplay: '',
-                driverName: '',
                 firstWeight: '',
                 firstWeightDate: new Date().toISOString().split('T')[0],
                 firstWeightTime: new Date().toTimeString().slice(0, 5),
@@ -351,15 +348,15 @@ const Wlog: React.FC = () => {
             vnumDisplay: entry.vnum,
             tid: entry.tid ? entry.tid.toString() : '',
             transporterName: entry.tname,
-            transporterAddress: '', // Not in table data
-            transporterContact: '', // Not in table data
+            transporterAddress: entry.tadd || 'N/A',
+            transporterContact: entry.tmob || 'N/A',
             mid: entry.mid ? entry.mid.toString() : '',
             mnameDisplay: entry.mname,
             sid: entry.sid ? entry.sid.toString() : '',
             snameDisplay: entry.sname || '',
             cid: entry.cid ? entry.cid.toString() : '',
             cnameDisplay: entry.cname || '',
-            driverName: entry.driver,
+
             firstWeight: entry.fwt ? entry.fwt.toString() : '',
             firstWeightDate: entry.fwtdt ? entry.fwtdt.split(' ')[0] : '', // simplistic splitting
             firstWeightTime: entry.fwtdt ? entry.fwtdt.split(' ')[1] : '',
@@ -378,18 +375,15 @@ const Wlog: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            const fwt = parseFloat(editFormData.firstWeight || '0');
-            const swt = parseFloat(editFormData.secondWeight || '0');
+            //  const fwt = parseFloat(editFormData.firstWeight || '0');
+            const lwt = parseFloat(editFormData.secondWeight || '0');
             // Net Weight logic: usually ABS(first - second) or First - Second. User said First - Second.
-            const netWeight = Math.abs(fwt - swt);
+            // const netWeight = Math.abs(fwt - lwt);
 
             const payload = {
-                lwt: swt,
-                swt: netWeight, // User mentioned Net Weight (first - second). Mapping to 'swt' column as standard weight usually implies net or standard. Assuming 'swt' = Net Weight based on context or user request "Net Weight (first weight -second weight)".
-                // Actually user asked Net Weight. Schema has 'fwt', 'lwt', 'swt'. 'swt' usually means Standard Weight, but maybe 'twt' (total) or similar. 
-                // Let's stick to user request: "Net Weight (first weight -second weight)". I will save it to 'swt' field for now as there is no 'nwt'. 
-                // Wait, schema has fwt, lwt, swt. Let's use swt for Net Weight as user implicitly asked for it. 
-                swtdt: `${editFormData.secondWeightDate} ${editFormData.secondWeightTime}`,
+                lwt: lwt,
+
+                lwtdt: `${editFormData.secondWeightDate} ${editFormData.secondWeightTime}`,
             };
 
 
@@ -410,8 +404,8 @@ const Wlog: React.FC = () => {
         if (!editFormData) return null;
 
         const fwt = parseFloat(editFormData.firstWeight || '0');
-        const swt = parseFloat(editFormData.secondWeight || '0');
-        const net = swt ? Math.abs(fwt - swt).toFixed(2) : '';
+        const lwt = parseFloat(editFormData.secondWeight || '0');
+        const net = lwt ? Math.abs(fwt - lwt).toFixed(2) : '';
 
         return (
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -622,10 +616,7 @@ const Wlog: React.FC = () => {
         );
     };
 
-    const handleAddNew = () => {
-        console.log('Add new weight entry');
-        alert('Add functionality will be implemented soon');
-    };
+
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -957,12 +948,7 @@ const Wlog: React.FC = () => {
                                                 Search
                                             </button>
                                         </div>
-                                        <button
-                                            onClick={handleAddNew}
-                                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                        >
-                                            Add New Entry
-                                        </button>
+
                                     </div>
 
                                     <div className="overflow-x-auto">
@@ -987,7 +973,6 @@ const Wlog: React.FC = () => {
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer / Supplier</th>
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transporter</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Weight</th>
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F.Wt Date</th>
                                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
@@ -1004,7 +989,7 @@ const Wlog: React.FC = () => {
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.mname || '-'}</td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.cname}  {item.sname}</td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tname || '-'}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.driver || '-'}</td>
+
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwt ? `${item.fwt} kg` : '-'}</td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwtdt || '-'}</td>
                                                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>

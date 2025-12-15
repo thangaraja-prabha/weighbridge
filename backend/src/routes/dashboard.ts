@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { wlog, mdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails } from '../db/schema';
+import { wlog, mdetail, tdetail, sdetail, cdetail, customers, materials, suppliers, tdetails, vdetails } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import fs from 'fs';
@@ -91,20 +91,23 @@ router.post('/weigh-in', authMiddleware, async (req: AuthRequest, res: Response)
         const transporter = await db.select({ id: tdetails.id }).from(tdetails).where(eq(tdetails.tname, tname)).limit(1);
         const supplier = await db.select({ id: suppliers.id }).from(suppliers).where(eq(suppliers.sname, sname)).limit(1);
         const customer = await db.select({ id: customers.id }).from(customers).where(eq(customers.cname, cname)).limit(1);
+        const vehicle = await db.select({ id: vdetails.id }).from(vdetails).where(eq(vdetails.vnum, vnum)).limit(1);
 
         // Insert with new relational structure
         await db.insert(wlog).values({
             fwt: parseInt(currentWeight) || 0,
-            lwt: 0, // Will be updated on weigh-out
-            swt: 0, // Will be calculated on weigh-out
+            lwt: 0,
+            swt: 0,
             mode: mode,
             mid: material.length > 0 ? material[0].id : null,
-            vid: 1, // TODO: Get vehicle ID from vdetail table
+            vid: vehicle.length > 0 ? vehicle[0].id : null,
+            tid: transporter.length > 0 ? transporter[0].id : null,
             sid: supplier.length > 0 ? supplier[0].id : null,
             cid: customer.length > 0 ? customer[0].id : null,
             apikey: (req as any).user.apikey || 'WESOPC01',
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+            remarks: remarks || null
         });
 
         res.json({ success: true, message: 'First weighment recorded successfully' });

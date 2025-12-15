@@ -83,7 +83,6 @@ router.get('/materials', async (req: Request, res: Response) => {
         const userApiKey = (req as any).user?.apikey;
 
         let conditions = [];
-        if (userApiKey) conditions.push(eq(materials.apikey, userApiKey));
         if (search && typeof search === 'string') conditions.push(like(materials.mname, `%${search}%`));
 
         const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
@@ -102,7 +101,7 @@ router.post('/materials', async (req: Request, res: Response) => {
         await db.insert(materials).values({
             mname,
             mdetail,
-            apikey: (req as any).user.apikey || 'WESOPC01',
+
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
@@ -118,7 +117,6 @@ router.get('/customers', async (req: Request, res: Response) => {
         const userApiKey = (req as any).user?.apikey;
 
         let conditions = [];
-        if (userApiKey) conditions.push(eq(customers.apikey, userApiKey));
         if (search && typeof search === 'string') conditions.push(like(customers.cname, `%${search}%`));
 
         const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
@@ -139,7 +137,7 @@ router.post('/customers', async (req: Request, res: Response) => {
             cadd,
             cnum,
             crem,
-            apikey: (req as any).user.apikey || 'WESOPC01',
+
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
@@ -155,7 +153,6 @@ router.get('/suppliers', async (req: Request, res: Response) => {
         const userApiKey = (req as any).user?.apikey;
 
         let conditions = [];
-        if (userApiKey) conditions.push(eq(suppliers.apikey, userApiKey));
         if (search && typeof search === 'string') conditions.push(like(suppliers.sname, `%${search}%`));
 
         const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
@@ -176,7 +173,7 @@ router.post('/suppliers', async (req: Request, res: Response) => {
             sadd,
             snum,
             srem,
-            apikey: (req as any).user.apikey || 'WESOPC01',
+
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
@@ -194,9 +191,7 @@ router.get('/transporters', async (req: Request, res: Response) => {
         let conditions = [];
 
         // Filter by company API key
-        if (userApiKey) {
-            conditions.push(eq(tdetails.apikey, userApiKey));
-        }
+
 
         // Add search functionality
         if (search && typeof search === 'string') {
@@ -226,9 +221,7 @@ router.get('/transporters/search', async (req: Request, res: Response) => {
         let conditions = [];
 
         // Filter by company API key
-        if (userApiKey) {
-            conditions.push(eq(tdetails.apikey, userApiKey));
-        }
+
 
         // Search across multiple fields
         conditions.push(sql`(tnum LIKE ${`%${q}%`} OR tname LIKE ${`%${q}%`} OR tmob LIKE ${`%${q}%`})`);
@@ -294,7 +287,7 @@ router.post('/transporters', async (req: Request, res: Response) => {
             tadd,
             tmob,
             trem,
-            apikey: (req as any).user.apikey || 'WESOPC01',
+
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });

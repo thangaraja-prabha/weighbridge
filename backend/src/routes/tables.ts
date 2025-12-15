@@ -10,7 +10,7 @@ router.use(authMiddleware);
 
 // Generic CRUD operations for any table
 const createTableRoutes = (tableName: string, table: any, searchFields: string[]) => {
-    
+
     // Get all records with pagination and search
     router.get(`/${tableName}`, async (req: Request, res: Response) => {
         try {
@@ -19,7 +19,7 @@ const createTableRoutes = (tableName: string, table: any, searchFields: string[]
 
             let whereClause;
             if (search) {
-                const searchConditions = searchFields.map(field => 
+                const searchConditions = searchFields.map(field =>
                     like(table[field], `%${search}%`)
                 );
                 whereClause = or(...searchConditions);
@@ -44,12 +44,12 @@ const createTableRoutes = (tableName: string, table: any, searchFields: string[]
         try {
             const { id } = req.params;
             const result = await db.select().from(table).where(eq(table.id, parseInt(id))).limit(1);
-            
+
             if (result.length === 0) {
                 res.status(404).json({ error: 'Record not found' });
                 return;
             }
-            
+
             res.json({ success: true, data: result[0] });
         } catch (err: any) {
             res.status(500).json({ error: err.message });
@@ -63,9 +63,9 @@ const createTableRoutes = (tableName: string, table: any, searchFields: string[]
                 ...req.body,
                 udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
             });
-            
-            res.status(201).json({ 
-                success: true, 
+
+            res.status(201).json({
+                success: true,
                 message: `${tableName} created successfully`,
                 data: { id: result[0].insertId }
             });
@@ -82,10 +82,10 @@ const createTableRoutes = (tableName: string, table: any, searchFields: string[]
                 ...req.body,
                 udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
             }).where(eq(table.id, parseInt(id)));
-            
-            res.json({ 
-                success: true, 
-                message: `${tableName} updated successfully` 
+
+            res.json({
+                success: true,
+                message: `${tableName} updated successfully`
             });
         } catch (err: any) {
             res.status(500).json({ error: err.message });
@@ -97,10 +97,10 @@ const createTableRoutes = (tableName: string, table: any, searchFields: string[]
         try {
             const { id } = req.params;
             await db.delete(table).where(eq(table.id, parseInt(id)));
-            
-            res.json({ 
-                success: true, 
-                message: `${tableName} deleted successfully` 
+
+            res.json({
+                success: true,
+                message: `${tableName} deleted successfully`
             });
         } catch (err: any) {
             res.status(500).json({ error: err.message });
@@ -117,7 +117,7 @@ createTableRoutes('modes', modes, ['mode']);
 createTableRoutes('roles', roles, ['role']);
 createTableRoutes('privileges', privillages, ['privil']);
 createTableRoutes('userlog', ulog, ['apikey']);
-createTableRoutes('weighlog', wlog, ['vnum', 'stat']);
+createTableRoutes('weighlog', wlog, ['vnum', 'tname']);
 
 // Special route for users (exclude sensitive data)
 router.get('/users', async (req: Request, res: Response) => {

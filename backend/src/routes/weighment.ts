@@ -21,7 +21,7 @@ router.post('/first', async (req: Request, res: Response) => {
         const trn_date = now.toISOString().slice(0, 19).replace('T', ' '); // YYYY-MM-DD HH:mm:ss
 
         await db.insert(wlog_legacy).values({
-            vnum, mname, tname, sname, cname, remarks,
+            mname, sname, cname, remarks,
             wt1: wt1 || '0',
             wt1at: trn_date,
             wt1by: (req as any).user.uname,

@@ -61,24 +61,22 @@ export const wlog = mysqlTable('wlog', {
     swt: int('swt'),
     mode: int('mode'),
     mid: int('mid'),
-    vid: int('vid'),
     sid: int('sid'),
     cid: int('cid'),
+    tid: int('tid'),
+    vid: int('vid'),
     apikey: varchar('apikey', { length: 10 }),
     uid: int('uid'),
     udt: varchar('udt', { length: 20 }),
-    driver: varchar('driver', { length: 50 }),
     remarks: text('remarks'),
     fwtdt: varchar('fwtdt', { length: 30 }),
-    tid: int('tid')
+    lwtdt: varchar('lwtdt', { length: 30 }),
 });
 
 // Legacy wlog table for backward compatibility
 export const wlog_legacy = mysqlTable('wlog_legacy', {
     id: int('id').primaryKey().autoincrement(),
-    vnum: varchar('vnum', { length: 20 }),
     mname: varchar('mname', { length: 50 }),
-    tname: varchar('tname', { length: 50 }),
     cname: varchar('cname', { length: 50 }),
     sname: varchar('sname', { length: 50 }),
     wt1: varchar('wt1', { length: 10 }),
@@ -122,7 +120,7 @@ export const customers = mysqlTable('customers', {
     cadd: text('cadd'),
     cnum: varchar('cnum', { length: 30 }),
     crem: text('crem'),
-    apikey: varchar('apikey', { length: 10 }),
+
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });
@@ -131,7 +129,7 @@ export const materials = mysqlTable('materials', {
     id: int('id').primaryKey().autoincrement(),
     mname: varchar('mname', { length: 30 }),
     mdetail: text('mdetail'),
-    apikey: varchar('apikey', { length: 10 }),
+
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });
@@ -142,7 +140,7 @@ export const suppliers = mysqlTable('suppliers', {
     sadd: text('sadd'),
     snum: varchar('snum', { length: 30 }),
     srem: text('srem'),
-    apikey: varchar('apikey', { length: 10 }),
+
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });
@@ -150,7 +148,6 @@ export const suppliers = mysqlTable('suppliers', {
 export const vdetails = mysqlTable('vdetails', {
     id: int('id').primaryKey().autoincrement(),
     vnum: varchar('vnum', { length: 20 }),
-
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });
@@ -162,7 +159,7 @@ export const tdetails = mysqlTable('tdetails', {
     tadd: text('tadd'),
     tmob: varchar('tmob', { length: 10 }), // Indian mobile numbers are exactly 10 digits
     trem: text('trem'),
-    apikey: varchar('apikey', { length: 10 }),
+
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });

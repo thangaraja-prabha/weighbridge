@@ -14,7 +14,7 @@ export interface WlogEntry {
     apikey?: string;
     uid?: number;
     udt?: string; // Updated date time
-    driver?: string;
+
     remarks?: string;
     fwtdt?: string;
 }
