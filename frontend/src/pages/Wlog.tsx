@@ -49,14 +49,13 @@ interface FormData {
 interface EditFormData extends FormData {
     id: number;
     secondWeight: string;
-    secondWeightDate: string;
-    secondWeightTime: string;
+    secondWeightDateTime: string; // Combined Date and Time
     netWeight: string;
 }
 
 const Wlog: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabId>('firstWeight');
-    const [liveWeight] = useState<string>('No Device');
+    const [mainWeight, setMainWeight] = useState<string>('0'); // Editable main weight
 
     const [tableData, setTableData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -69,10 +68,6 @@ const Wlog: React.FC = () => {
     });
 
     const [modes, setModes] = useState<any[]>([]);
-    // const [materials, setMaterials] = useState<any[]>([]);
-    // const [customers, setCustomers] = useState<any[]>([]);
-    // const [suppliers, setSuppliers] = useState<any[]>([]);
-    // const [transporters, setTransporters] = useState<any[]>([]);
 
     const [formData, setFormData] = useState<FormData>({
         mode: '',
@@ -100,7 +95,6 @@ const Wlog: React.FC = () => {
         materials: [],
         suppliers: [],
         transporters: [],
-
         customers: [],
     });
 
@@ -134,10 +128,11 @@ const Wlog: React.FC = () => {
     };
 
     useEffect(() => {
-        if (activeTab === 'secondWeight') {
+        setIsEditing(false);
+        setEditFormData(null);
+        if (activeTab === 'secondWeight' || activeTab === 'summary') {
             loadTableData(1);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]);
 
     useEffect(() => {
@@ -145,6 +140,11 @@ const Wlog: React.FC = () => {
             try {
                 const data = await masterApi.getModes();
                 setModes(data);
+                // Set default mode to 'Internal'
+                const internalMode = data.find((m: any) => m.mode.toLowerCase() === 'internal');
+                if (internalMode) {
+                    setFormData(prev => ({ ...prev, mode: internalMode.id.toString() }));
+                }
             } catch (error) {
                 console.error('Error loading modes:', error);
             }
@@ -258,6 +258,10 @@ const Wlog: React.FC = () => {
         setSuggestions((prev) => ({ ...prev, transporters: [] }));
     };
 
+    const handleFirstWeightCapture = () => {
+        setFormData((prev) => ({ ...prev, firstWeight: mainWeight }));
+    };
+
     const handleFirstWeightSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -268,7 +272,6 @@ const Wlog: React.FC = () => {
                 return;
             }
 
-            const liveWeightVal = parseFloat(liveWeight.replace(' kg', '')) || 0;
             const manualFirstWeight = parseFloat(formData.firstWeight);
 
             const payload = {
@@ -278,7 +281,7 @@ const Wlog: React.FC = () => {
                 tid: formData.tid ? parseInt(formData.tid, 10) : undefined,
                 sid: formData.sid ? parseInt(formData.sid, 10) : undefined,
                 cid: formData.cid ? parseInt(formData.cid, 10) : undefined,
-                fwt: !isNaN(manualFirstWeight) && manualFirstWeight > 0 ? manualFirstWeight : liveWeightVal,
+                fwt: !isNaN(manualFirstWeight) && manualFirstWeight > 0 ? manualFirstWeight : 0,
 
                 remarks: formData.remarks,
                 fwtdt: `${formData.firstWeightDate} ${formData.firstWeightTime}`,
@@ -339,32 +342,37 @@ const Wlog: React.FC = () => {
 
     const handleEdit = (entry: any) => {
         setIsEditing(true);
-        // Split date time string logic if needed, simplified here
+        // Combine date and time for datetime-local input
         const now = new Date();
+        const currentDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+
+        // Determine if it's a supplier or customer based on sid/sname presence
+        // If sid exists, it's a supplier. If sname exists but not cname, likely supplier.
+        const isSupplier = !!entry.sid || (!!entry.sname && !entry.cname);
+
         setEditFormData({
             id: entry.id,
             mode: entry.mode ? entry.mode.toString() : '',
             vid: entry.vid ? entry.vid.toString() : '',
-            vnumDisplay: entry.vnum,
+            vnumDisplay: entry.vnum || '',
             tid: entry.tid ? entry.tid.toString() : '',
-            transporterName: entry.tname,
+            transporterName: entry.tname || '',
             transporterAddress: entry.tadd || 'N/A',
             transporterContact: entry.tmob || 'N/A',
             mid: entry.mid ? entry.mid.toString() : '',
-            mnameDisplay: entry.mname,
+            mnameDisplay: entry.mname || '',
             sid: entry.sid ? entry.sid.toString() : '',
             snameDisplay: entry.sname || '',
             cid: entry.cid ? entry.cid.toString() : '',
             cnameDisplay: entry.cname || '',
 
             firstWeight: entry.fwt ? entry.fwt.toString() : '',
-            firstWeightDate: entry.fwtdt ? entry.fwtdt.split(' ')[0] : '', // simplistic splitting
+            firstWeightDate: entry.fwtdt ? entry.fwtdt.split(' ')[0] : '',
             firstWeightTime: entry.fwtdt ? entry.fwtdt.split(' ')[1] : '',
             remarks: entry.remarks,
-            showSupplier: !!entry.sid,
+            showSupplier: isSupplier,
             secondWeight: '',
-            secondWeightDate: now.toISOString().split('T')[0],
-            secondWeightTime: now.toTimeString().slice(0, 5),
+            secondWeightDateTime: currentDateTime,
             netWeight: ''
         });
     };
@@ -379,21 +387,26 @@ const Wlog: React.FC = () => {
         }
     };
 
+    const handleSecondWeightCapture = () => {
+        if (editFormData) {
+            setEditFormData({ ...editFormData, secondWeight: mainWeight });
+        }
+    };
+
     const handleSecondWeightSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editFormData) return;
 
         setIsSubmitting(true);
         try {
-            //  const fwt = parseFloat(editFormData.firstWeight || '0');
             const lwt = parseFloat(editFormData.secondWeight || '0');
-            // Net Weight logic: usually ABS(first - second) or First - Second. User said First - Second.
-            // const netWeight = Math.abs(fwt - lwt);
+            // Assuming the datetime string is in "YYYY-MM-DDTHH:mm" format, replace T with space
+            const lwtdt = editFormData.secondWeightDateTime.replace('T', ' ');
 
             const payload = {
                 lwt: lwt,
-
-                lwtdt: `${editFormData.secondWeightDate} ${editFormData.secondWeightTime}`,
+                lwtdt: lwtdt,
+                remarks: editFormData.remarks, // Include updated remarks
             };
 
 
@@ -415,18 +428,13 @@ const Wlog: React.FC = () => {
 
         const fwt = parseFloat(editFormData.firstWeight || '0');
         const lwt = parseFloat(editFormData.secondWeight || '0');
-        const net = lwt ? Math.abs(fwt - lwt).toFixed(2) : '';
+        const net = lwt ? Math.abs(fwt - lwt).toFixed(2) : '-';
 
         return (
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-semibold text-gray-800">Second Weight Entry</h3>
-                    <button
-                        onClick={() => setIsEditing(false)}
-                        className="text-gray-500 hover:text-gray-700"
-                    >
-                        Cancel
-                    </button>
+
                 </div>
 
                 <form onSubmit={handleSecondWeightSubmit} className="space-y-6">
@@ -434,11 +442,8 @@ const Wlog: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Mode</label>
-                            <div className="flex items-center space-x-4 mt-2">
-                                {/* Displaying only the selected mode */}
-                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                    {modes.find(m => m.id.toString() === editFormData.mode)?.mode || 'Unknown'}
-                                </span>
+                            <div className="px-3 py-2 bg-gray-50 rounded border border-gray-200 text-gray-700 font-medium">
+                                {modes.find(m => m.id.toString() === editFormData.mode)?.mode || 'Unknown'}
                             </div>
                         </div>
                         <div className="flex flex-col justify-end">
@@ -454,63 +459,45 @@ const Wlog: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             {editFormData.showSupplier ? 'Supplier' : 'Customer'}
                         </label>
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                            value={editFormData.showSupplier ? editFormData.snameDisplay : editFormData.cnameDisplay}
-                            readOnly
-                        />
+                        <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 min-h-[42px]">
+                            {(editFormData.showSupplier ? editFormData.snameDisplay : editFormData.cnameDisplay) || 'N/A'}
+                        </div>
                     </div>
 
                     {/* Vehicle Details Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="relative col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Number</label>
-                            <input
-                                type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                                value={editFormData.vnumDisplay}
-                                readOnly
-                            />
+                            <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                {editFormData.vnumDisplay}
+                            </div>
                         </div>
                         <div className="relative col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Transporter Name</label>
-                            <input
-                                type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                                value={editFormData.transporterName || ''}
-                                readOnly
-                            />
+                            <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                {editFormData.transporterName || 'N/A'}
+                            </div>
                         </div>
                         <div className="relative col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Transporter Address</label>
-                            <input
-                                type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                                value={editFormData.transporterAddress || ''}
-                                readOnly
-                            />
+                            <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                {editFormData.transporterAddress || 'N/A'}
+                            </div>
                         </div>
                         <div className="relative col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Transporter Contact</label>
-                            <input
-                                type="text"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                                value={editFormData.transporterContact || ''}
-                                readOnly
-                            />
+                            <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                {editFormData.transporterContact || 'N/A'}
+                            </div>
                         </div>
                     </div>
 
                     {/* Material Display */}
                     <div className="relative">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Material</label>
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
-                            value={editFormData.mnameDisplay}
-                            readOnly
-                        />
+                        <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                            {editFormData.mnameDisplay}
+                        </div>
                     </div>
 
                     {/* Weight Section: First, Second, Net */}
@@ -520,30 +507,21 @@ const Wlog: React.FC = () => {
                             <h4 className="font-semibold text-gray-700 border-b pb-2">First Weight</h4>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                                    value={editFormData.firstWeight}
-                                    readOnly
-                                />
+                                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
+                                    {editFormData.firstWeight}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                <input
-                                    type="date"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                                    value={editFormData.firstWeightDate}
-                                    readOnly
-                                />
+                                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
+                                    {editFormData.firstWeightDate}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                                <input
-                                    type="time"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
-                                    value={editFormData.firstWeightTime}
-                                    readOnly
-                                />
+                                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
+                                    {editFormData.firstWeightTime}
+                                </div>
                             </div>
                         </div>
 
@@ -552,33 +530,32 @@ const Wlog: React.FC = () => {
                             <h4 className="font-semibold text-blue-800 border-b border-blue-200 pb-2">Second Weight</h4>
                             <div>
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Weight (kg)</label>
-                                <input
-                                    type="number"
-                                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    value={editFormData.secondWeight}
-                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeight: e.target.value })}
-                                    required
-                                    step="0.01"
-                                    placeholder="Enter second weight"
-                                />
+                                <div className="flex space-x-2">
+                                    <input
+                                        type="number"
+                                        className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        value={editFormData.secondWeight}
+                                        onChange={(e) => setEditFormData({ ...editFormData, secondWeight: e.target.value })}
+                                        required
+                                        step="0.01"
+                                        placeholder="Enter second weight"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleSecondWeightCapture}
+                                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                                    >
+                                        Capture
+                                    </button>
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-blue-800 mb-1">Date</label>
+                                <label className="block text-sm font-medium text-blue-800 mb-1">Date & Time</label>
                                 <input
-                                    type="date"
+                                    type="datetime-local"
                                     className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    value={editFormData.secondWeightDate}
-                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeightDate: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-blue-800 mb-1">Time</label>
-                                <input
-                                    type="time"
-                                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    value={editFormData.secondWeightTime}
-                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeightTime: e.target.value })}
+                                    value={editFormData.secondWeightDateTime}
+                                    onChange={(e) => setEditFormData({ ...editFormData, secondWeightDateTime: e.target.value })}
                                     required
                                 />
                             </div>
@@ -589,19 +566,19 @@ const Wlog: React.FC = () => {
                             <h4 className="font-semibold text-gray-700 border-b pb-2 w-full text-center">Net Weight</h4>
                             <div className="flex-1 flex items-center justify-center">
                                 <span className="text-4xl font-bold text-gray-800">
-                                    {net ? `${net} kg` : '-'}
+                                    {net} kg
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Remarks (Read-Only) */}
+                    {/* Remarks (Editable) */}
                     <div className="col-span-1 md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
                         <textarea
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 min-h-[100px]"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px]"
                             value={editFormData.remarks || ''}
-                            readOnly
+                            onChange={(e) => setEditFormData({ ...editFormData, remarks: e.target.value })}
                         />
                     </div>
 
@@ -850,21 +827,30 @@ const Wlog: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             First Weight (kg)
                                         </label>
-                                        <input
-                                            type="number"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            placeholder="Enter weight"
-                                            value={formData.firstWeight || ''}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    firstWeight: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                            step="0.01"
-                                            min="0"
-                                        />
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="number"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder="Enter weight"
+                                                value={formData.firstWeight || ''}
+                                                onChange={(e) =>
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        firstWeight: e.target.value,
+                                                    }))
+                                                }
+                                                required
+                                                step="0.01"
+                                                min="0"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleFirstWeightCapture}
+                                                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                                            >
+                                                Capture
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="relative">
@@ -1157,10 +1143,16 @@ const Wlog: React.FC = () => {
                             Live Weight
                         </h1>
                         <div
-                            className="mt-2 text-9xl font-bold text-green-400 font-orbitron"
+                            className="mt-2 text-9xl font-bold text-green-400 font-orbitron flex full-width justify-center items-center"
                             style={{ textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00' }}
                         >
-                            {liveWeight}
+                            <input
+                                type="number"
+                                style={{ fontSize: '8rem' }}
+                                value={mainWeight}
+                                onChange={(e) => setMainWeight(e.target.value)}
+                                className="bg-transparent text-center focus:outline-none w-full border-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+                            />
                             <span className="text-4xl ml-4 text-green-300">kg</span>
                         </div>
                     </div>
@@ -1187,8 +1179,6 @@ const Wlog: React.FC = () => {
                 </div>
 
                 <div className="transition-all duration-300 ease-in-out">{renderTabContent()}</div>
-
-
             </div>
         </div>
     );
