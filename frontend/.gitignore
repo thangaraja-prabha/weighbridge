@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+node_modules/.vite/
+
 
 # Production Build
 dist/
@@ -28,3 +30,7 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Vite cache directory
+.vite/
+\.vite\deps
