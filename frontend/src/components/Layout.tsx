@@ -175,15 +175,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {role === 2 && ( // Managers
                             <>
                                 <MenuItem to="/employees" label="USERS" icon={Icons.Users} />
-                                <MenuItem to="/wlog" label="SETTING" icon={Icons.Config}>
-
-                                </MenuItem>
+                                <MenuItem to="/wlog" label="Entry Weigh" icon={Icons.Config} />
+                                <MenuItem to="/records" label="Records" icon={Icons.Config} />
                             </>
                         )}
 
                         {role === 1 && ( // Users
                             <>
                                 <MenuItem to="/entry" label="ENTRY" icon={Icons.Entry} />
+                                <MenuItem to="/wlog" label="Entry Weigh" icon={Icons.Config} />
+                                <MenuItem to="/records" label="Records" icon={Icons.Config} />
                             </>
                         )}
 
@@ -196,6 +197,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {![1, 2, 3].includes(role) && (
                             <>
                                 <MenuItem to="/dashboard" label="WEIGH IN" icon={Icons.WeighIn} />
+                                <MenuItem to="/wlog" label="Entry" icon={Icons.Config} />
+                                <MenuItem to="/records" label="Records" icon={Icons.Config} />
                                 <MenuItem to="/master-data" label="MASTER DATA" icon={Icons.Config} />
                             </>
                         )}

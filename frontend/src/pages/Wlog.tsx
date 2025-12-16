@@ -40,8 +40,7 @@ interface FormData {
     cid: string;
     cnameDisplay: string;
     firstWeight: string;
-    firstWeightDate: string;
-    firstWeightTime: string;
+    firstWeightDateTime: string;
     remarks: string;
     showSupplier: boolean;
 }
@@ -51,6 +50,7 @@ interface EditFormData extends FormData {
     secondWeight: string;
     secondWeightDateTime: string; // Combined Date and Time
     netWeight: string;
+    firstWeightDateTime: string; 
 }
 
 const Wlog: React.FC = () => {
@@ -84,8 +84,7 @@ const Wlog: React.FC = () => {
         cid: '',
         cnameDisplay: '',
         firstWeight: '',
-        firstWeightDate: new Date().toISOString().split('T')[0],
-        firstWeightTime: new Date().toTimeString().slice(0, 5),
+        firstWeightDateTime: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16),
         remarks: '',
         showSupplier: false,
     });
@@ -259,7 +258,14 @@ const Wlog: React.FC = () => {
     };
 
     const handleFirstWeightCapture = () => {
-        setFormData((prev) => ({ ...prev, firstWeight: mainWeight }));
+        const now = new Date();
+        const currentDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+        
+        setFormData((prev) => ({
+            ...prev,
+            firstWeight: mainWeight,
+            firstWeightDateTime: currentDateTime
+        }));
     };
 
     const handleFirstWeightSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -284,17 +290,16 @@ const Wlog: React.FC = () => {
                 fwt: !isNaN(manualFirstWeight) && manualFirstWeight > 0 ? manualFirstWeight : 0,
 
                 remarks: formData.remarks,
-                fwtdt: `${formData.firstWeightDate} ${formData.firstWeightTime}`,
+                fwtdt: formData.firstWeightDateTime.replace('T', ' '),
             };
 
             await wlogApi.createWlogEntry(payload);
             toast.success('First weight entry created successfully!');
 
             setFormData({
-                mode: '',
+               mode: '',
                 vid: '',
                 vnumDisplay: '',
-
                 tid: '',
                 transporterName: '',
                 transporterAddress: '',
@@ -305,9 +310,8 @@ const Wlog: React.FC = () => {
                 snameDisplay: '',
                 cid: '',
                 cnameDisplay: '',
-                firstWeight: '',
-                firstWeightDate: new Date().toISOString().split('T')[0],
-                firstWeightTime: new Date().toTimeString().slice(0, 5),
+                firstWeight: '',  // Add this line
+                firstWeightDateTime: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16),
                 remarks: '',
                 showSupplier: false,
             });
@@ -367,8 +371,7 @@ const Wlog: React.FC = () => {
             cnameDisplay: entry.cname || '',
 
             firstWeight: entry.fwt ? entry.fwt.toString() : '',
-            firstWeightDate: entry.fwtdt ? entry.fwtdt.split(' ')[0] : '',
-            firstWeightTime: entry.fwtdt ? entry.fwtdt.split(' ')[1] : '',
+            firstWeightDateTime: entry.fwtdt ? `${entry.fwtdt.split(' ')[0]}T${entry.fwtdt.split(' ')[1]}` : '',
             remarks: entry.remarks,
             showSupplier: isSupplier,
             secondWeight: '',
@@ -377,19 +380,16 @@ const Wlog: React.FC = () => {
         });
     };
 
-    const handlePrint = async (id: number) => {
-        try {
-            await wlogApi.downloadPDF(id);
-            toast.success('PDF downloaded successfully!');
-        } catch (error) {
-            console.error('Error downloading PDF:', error);
-            toast.error('Failed to download PDF ticket');
-        }
-    };
-
     const handleSecondWeightCapture = () => {
         if (editFormData) {
-            setEditFormData({ ...editFormData, secondWeight: mainWeight });
+            const now = new Date();
+            const currentDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            
+            setEditFormData({
+                ...editFormData,
+                secondWeight: mainWeight,
+                secondWeightDateTime: currentDateTime
+            });
         }
     };
 
@@ -512,15 +512,11 @@ const Wlog: React.FC = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
                                 <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
-                                    {editFormData.firstWeightDate}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
-                                    {editFormData.firstWeightTime}
+                                    {editFormData.firstWeightDateTime ? 
+                                        `${editFormData.firstWeightDateTime.split('T')[0]} ${editFormData.firstWeightDateTime.split('T')[1]}` : 
+                                        'N/A'}
                                 </div>
                             </div>
                         </div>
@@ -855,34 +851,16 @@ const Wlog: React.FC = () => {
 
                                     <div className="relative">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            First Weight Date
+                                            First Weight Date & Time
                                         </label>
                                         <input
-                                            type="date"
+                                            type="datetime-local"
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            value={formData.firstWeightDate || ''}
+                                            value={formData.firstWeightDateTime || ''}
                                             onChange={(e) =>
                                                 setFormData((prev) => ({
                                                     ...prev,
-                                                    firstWeightDate: e.target.value,
-                                                }))
-                                            }
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="relative">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            First Weight Time
-                                        </label>
-                                        <input
-                                            type="time"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            value={formData.firstWeightTime || ''}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    firstWeightTime: e.target.value,
+                                                    firstWeightDateTime: e.target.value,
                                                 }))
                                             }
                                             required
@@ -1030,98 +1008,14 @@ const Wlog: React.FC = () => {
                     <div className="space-y-6">
                         <div className="bg-white rounded-lg shadow-md p-6">
                             <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                                Summary
+                                Single Weight Page
                             </h3>
-                            {isEditing ? renderEditForm() : (
-                                <div>
-
-                                    <div className="mb-4 flex justify-between items-center">
-                                        <div className="flex space-x-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Search entries..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            />
-                                            <button
-                                                onClick={handleSearch}
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                            >
-                                                Search
-                                            </button>
-                                        </div>
-
-                                    </div>
-
-                                    <div className="overflow-x-auto">
-                                        {loading ? (
-                                            <div className="text-center py-8">
-                                                <div className="text-gray-500">Loading...</div>
-                                            </div>
-                                        ) : tableData.length === 0 ? (
-                                            <div className="text-center py-8">
-                                                <div className="text-gray-500 text-lg">No data found</div>
-                                                <div className="text-gray-400 text-sm mt-2">
-                                                    No vehicle entries available in the database
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <table className="min-w-full divide-y divide-gray-200">
-                                                    <thead className="bg-gray-50">
-                                                        <tr>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer / Supplier</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transporter</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Weight</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F.Wt Date</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
-                                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="bg-white divide-y divide-gray-200">
-                                                        {tableData.map((item) => {
-                                                            const modeName = modes.find(m => m.id === item.mode)?.mode || item.mode;
-                                                            return (
-                                                                <tr key={item.id} className="hover:bg-gray-50">
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{modeName || '-'}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.vnum || '-'}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.mname || '-'}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.cname}  {item.sname}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tname || '-'}</td>
-
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwt ? `${item.fwt} kg` : '-'}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.fwtdt || '-'}</td>
-                                                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                                        <button
-                                                                            onClick={() => handlePrint(item.id)}
-                                                                            className="text-green-600 hover:text-green-900"
-                                                                        >
-                                                                            Print
-                                                                        </button>
-                                                                    </td>
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </tbody>
-                                                </table>
-
-                                                <Pagination
-                                                    currentPage={pagination.currentPage}
-                                                    totalPages={pagination.totalPages}
-                                                    total={pagination.total}
-                                                    limit={pagination.limit}
-                                                    onPageChange={handlePageChange}
-                                                />
-                                            </>
-                                        )}
-                                    </div>
+                            <div className="text-center py-8">
+                                <div className="text-gray-500 text-lg">Single weight functionality</div>
+                                <div className="text-gray-400 text-sm mt-2">
+                                    This page is for single weight operations
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 );

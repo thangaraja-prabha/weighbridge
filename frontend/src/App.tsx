@@ -8,6 +8,7 @@ import Customers from './pages/Customers';
 import Register from './pages/Register';
 import Settings from './pages/Wlog';
 import Layout from './components/Layout';
+import Records from './pages/Records';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -74,7 +75,17 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-
+ {/* Records */}
+            <Route
+                path="/records"
+                element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <Records />
+                        </Layout>
+                    </ProtectedRoute>
+                }
+            />
 
 
 
