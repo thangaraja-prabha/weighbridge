@@ -19,7 +19,10 @@ export interface RegisterData {
     comail?: string;
     companyid?: number;
 }
-
+export interface ChangePasswordData {
+    currentPassword: string;
+    newPassword: string;
+}
 export const authApi = {
     login: async (credentials: LoginCredentials) => {
         const response = await fetch(`${API_URL}/auth/login`, {
@@ -47,13 +50,26 @@ export const authApi = {
             },
             body: JSON.stringify(userData),
         });
-
         const data = await response.json();
-
         if (!response.ok) {
             throw new Error(data.message || 'An error occurred during registration');
         }
-
         return data;
+    },
+    changePassword: async (data: ChangePasswordData) => {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
+        });
+        const responseData = await response.json();
+        if (!response.ok) {
+            throw new Error(responseData.message || 'Failed to change password');
+        }
+        return responseData;
     }
 };

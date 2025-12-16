@@ -50,7 +50,7 @@ interface EditFormData extends FormData {
     secondWeight: string;
     secondWeightDateTime: string; // Combined Date and Time
     netWeight: string;
-    firstWeightDateTime: string; 
+    firstWeightDateTime: string;
 }
 
 const Wlog: React.FC = () => {
@@ -104,7 +104,7 @@ const Wlog: React.FC = () => {
     const tabs: { id: TabId; label: string; icon: string }[] = [
         { id: 'firstWeight', label: 'First Weight', icon: '⚖️' },
         { id: 'secondWeight', label: 'Second Weight', icon: '🏋️' },
-        { id: 'summary', label: 'Summary', icon: '📊' },
+        { id: 'summary', label: 'Single Weight ', icon: '📊' },
     ];
 
     const loadTableData = async (page: number = pagination.currentPage) => {
@@ -260,7 +260,7 @@ const Wlog: React.FC = () => {
     const handleFirstWeightCapture = () => {
         const now = new Date();
         const currentDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-        
+
         setFormData((prev) => ({
             ...prev,
             firstWeight: mainWeight,
@@ -297,7 +297,7 @@ const Wlog: React.FC = () => {
             toast.success('First weight entry created successfully!');
 
             setFormData({
-               mode: '',
+                mode: '',
                 vid: '',
                 vnumDisplay: '',
                 tid: '',
@@ -384,7 +384,7 @@ const Wlog: React.FC = () => {
         if (editFormData) {
             const now = new Date();
             const currentDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-            
+
             setEditFormData({
                 ...editFormData,
                 secondWeight: mainWeight,
@@ -514,8 +514,8 @@ const Wlog: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time</label>
                                 <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
-                                    {editFormData.firstWeightDateTime ? 
-                                        `${editFormData.firstWeightDateTime.split('T')[0]} ${editFormData.firstWeightDateTime.split('T')[1]}` : 
+                                    {editFormData.firstWeightDateTime ?
+                                        `${editFormData.firstWeightDateTime.split('T')[0]} ${editFormData.firstWeightDateTime.split('T')[1]}` :
                                         'N/A'}
                                 </div>
                             </div>

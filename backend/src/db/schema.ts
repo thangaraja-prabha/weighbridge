@@ -59,6 +59,7 @@ export const wlog = mysqlTable('wlog', {
     fwt: int('fwt'),
     lwt: int('lwt'),
     swt: int('swt'),
+    swtdt: varchar('swtdt', { length: 30 }),  // Gross Weight Date Time
     mode: int('mode'),
     mid: int('mid'),
     sid: int('sid'),
@@ -71,6 +72,10 @@ export const wlog = mysqlTable('wlog', {
     remarks: text('remarks'),
     fwtdt: varchar('fwtdt', { length: 30 }),
     lwtdt: varchar('lwtdt', { length: 30 }),
+     twt: int('twt'),  // Tare Weight
+    twtdt: varchar('twtdt', { length: 30 }),  // Tare Weight Date Time
+   
+   
 });
 
 // Legacy wlog table for backward compatibility
