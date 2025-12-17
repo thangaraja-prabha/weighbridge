@@ -264,6 +264,7 @@ router.get('/vehicles/search', async (req: Request, res: Response) => {
         const result = await db.select({
             id: vdetails.id,
             vnum: vdetails.vnum,
+            twt: vdetails.twt,
         }).from(vdetails).where(whereCondition).limit(10);
 
         res.json(result);

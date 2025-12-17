@@ -140,6 +140,24 @@ class WlogApi {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     }
+
+    // Get tare weight for a vehicle (most recent twt from wlog)
+    async getTareWeightByVehicle(vid: number): Promise<{ twt: number; twtdt: string } | null> {
+        try {
+            const response = await fetch(`${API_BASE_URL}/wlog/vehicle/${vid}/tare`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error('Error fetching tare weight:', error);
+            return null;
+        }
+    }
 }
 
 export const wlogApi = new WlogApi();

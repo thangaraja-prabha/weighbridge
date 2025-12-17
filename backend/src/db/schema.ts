@@ -72,10 +72,10 @@ export const wlog = mysqlTable('wlog', {
     remarks: text('remarks'),
     fwtdt: varchar('fwtdt', { length: 30 }),
     lwtdt: varchar('lwtdt', { length: 30 }),
-     twt: int('twt'),  // Tare Weight
+    twt: int('twt'),  // Tare Weight
     twtdt: varchar('twtdt', { length: 30 }),  // Tare Weight Date Time
-   
-   
+
+
 });
 
 // Legacy wlog table for backward compatibility
@@ -153,6 +153,7 @@ export const suppliers = mysqlTable('suppliers', {
 export const vdetails = mysqlTable('vdetails', {
     id: int('id').primaryKey().autoincrement(),
     vnum: varchar('vnum', { length: 20 }),
+    twt: int('twt'),
     uid: int('uid'),
     udt: varchar('udt', { length: 20 })
 });
