@@ -98,6 +98,11 @@ router.get('/materials', async (req: Request, res: Response) => {
 router.post('/materials', async (req: Request, res: Response) => {
     try {
         const { mname, mdetail } = req.body;
+
+        if (!mname) {
+            return res.status(400).json({ error: 'Material name is required' });
+        }
+
         await db.insert(materials).values({
             mname,
             mdetail,
@@ -105,7 +110,26 @@ router.post('/materials', async (req: Request, res: Response) => {
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
-        res.json({ success: true });
+        res.json({ success: true, message: 'Material created successfully' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/materials/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { mname, mdetail } = req.body;
+
+        if (!mname) {
+            return res.status(400).json({ error: 'Material name is required' });
+        }
+
+        await db.update(materials).set({
+            mname,
+            mdetail,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        }).where(eq(materials.id, parseInt(id)));
+
+        res.json({ success: true, message: 'Material updated successfully' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
@@ -132,6 +156,11 @@ router.get('/customers', async (req: Request, res: Response) => {
 router.post('/customers', async (req: Request, res: Response) => {
     try {
         const { cname, cadd, cnum, crem } = req.body;
+
+        if (!cname) {
+            return res.status(400).json({ error: 'Customer name is required' });
+        }
+
         await db.insert(customers).values({
             cname,
             cadd,
@@ -141,7 +170,28 @@ router.post('/customers', async (req: Request, res: Response) => {
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
-        res.json({ success: true });
+        res.json({ success: true, message: 'Customer created successfully' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/customers/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { cname, cadd, cnum, crem } = req.body;
+
+        if (!cname) {
+            return res.status(400).json({ error: 'Customer name is required' });
+        }
+
+        await db.update(customers).set({
+            cname,
+            cadd,
+            cnum,
+            crem,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        }).where(eq(customers.id, parseInt(id)));
+
+        res.json({ success: true, message: 'Customer updated successfully' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
@@ -168,6 +218,11 @@ router.get('/suppliers', async (req: Request, res: Response) => {
 router.post('/suppliers', async (req: Request, res: Response) => {
     try {
         const { sname, sadd, snum, srem } = req.body;
+
+        if (!sname) {
+            return res.status(400).json({ error: 'Supplier name is required' });
+        }
+
         await db.insert(suppliers).values({
             sname,
             sadd,
@@ -177,7 +232,28 @@ router.post('/suppliers', async (req: Request, res: Response) => {
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
-        res.json({ success: true });
+        res.json({ success: true, message: 'Supplier created successfully' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/suppliers/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { sname, sadd, snum, srem } = req.body;
+
+        if (!sname) {
+            return res.status(400).json({ error: 'Supplier name is required' });
+        }
+
+        await db.update(suppliers).set({
+            sname,
+            sadd,
+            snum,
+            srem,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        }).where(eq(suppliers.id, parseInt(id)));
+
+        res.json({ success: true, message: 'Supplier updated successfully' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
@@ -271,9 +347,79 @@ router.get('/vehicles/search', async (req: Request, res: Response) => {
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
+// Vehicles (New relational table)
+router.get('/vehicles', async (req: Request, res: Response) => {
+    try {
+        const { page, limit, offset } = getPaginationParams(req);
+        const { search } = req.query;
+
+        let conditions = [];
+        if (search && typeof search === 'string') {
+            conditions.push(like(vdetails.vnum, `%${search}%`));
+        }
+
+        const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const countResult = await db.select({ count: sql`count(*)` }).from(vdetails).where(whereCondition);
+        // @ts-ignore
+        const total = Number(countResult[0].count);
+        const result = await db.select().from(vdetails).where(whereCondition).limit(limit).offset(offset).orderBy(desc(vdetails.id));
+        res.json(createPaginatedResponse(result, total, page, limit));
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/vehicles', async (req: Request, res: Response) => {
+    try {
+        const { vnum, twt } = req.body;
+
+        if (!vnum) {
+            return res.status(400).json({ error: 'Vehicle number is required' });
+        }
+
+        if (!twt) {
+            return res.status(400).json({ error: 'Tare weight is mandatory for vehicle' });
+        }
+
+        await db.insert(vdetails).values({
+            vnum,
+            twt: parseInt(twt),
+            uid: (req as any).user.id || 1,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        });
+        res.json({ success: true, message: 'Vehicle created successfully' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/vehicles/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { vnum, twt } = req.body;
+
+        if (!vnum) {
+            return res.status(400).json({ error: 'Vehicle number is required' });
+        }
+
+        if (!twt) {
+            return res.status(400).json({ error: 'Tare weight is mandatory for vehicle' });
+        }
+
+        await db.update(vdetails).set({
+            vnum,
+            twt: parseInt(twt),
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        }).where(eq(vdetails.id, parseInt(id)));
+
+        res.json({ success: true, message: 'Vehicle updated successfully' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 router.post('/transporters', async (req: Request, res: Response) => {
     try {
         const { tnum, tname, tadd, tmob, trem } = req.body;
+
+        if (!tname) {
+            return res.status(400).json({ error: 'Transporter name is required' });
+        }
 
         // Validate mobile number if provided
         if (tmob && !validateIndianMobileNumber(tmob)) {
@@ -292,7 +438,36 @@ router.post('/transporters', async (req: Request, res: Response) => {
             uid: (req as any).user.id || 1,
             udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
         });
-        res.json({ success: true });
+        res.json({ success: true, message: 'Transporter created successfully' });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/transporters/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { tnum, tname, tadd, tmob, trem } = req.body;
+
+        if (!tname) {
+            return res.status(400).json({ error: 'Transporter name is required' });
+        }
+
+        // Validate mobile number if provided
+        if (tmob && !validateIndianMobileNumber(tmob)) {
+            return res.status(400).json({
+                error: 'Please enter a valid Indian mobile number (10 digits starting with 6, 7, 8, or 9)'
+            });
+        }
+
+        await db.update(tdetails).set({
+            tnum,
+            tname,
+            tadd,
+            tmob,
+            trem,
+            udt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        }).where(eq(tdetails.id, parseInt(id)));
+
+        res.json({ success: true, message: 'Transporter updated successfully' });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 

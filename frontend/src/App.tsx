@@ -9,6 +9,12 @@ import Register from './pages/Register';
 import Settings from './pages/Wlog';
 import Layout from './components/Layout';
 import Records from './pages/Records';
+import Lookups from './pages/Lookups';
+import VehicleManagement from './pages/VehicleManagement';
+import TransporterManagement from './pages/TransporterManagement';
+import MaterialManagement from './pages/MaterialManagement';
+import CustomerManagement from './pages/CustomerManagement';
+import SupplierManagement from './pages/SupplierManagement';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -75,17 +81,17 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
- {/* Records */}
-            <Route
-                path="/records"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <Records />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
+                {/* Records */}
+                <Route
+                    path="/records"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Records />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
 
 
 
@@ -96,6 +102,68 @@ function App() {
                         <ProtectedRoute>
                             <Layout>
                                 <Customers />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Lookup Management Routes */}
+                <Route
+                    path="/lookups"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Lookups />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/lookups/vehicles"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <VehicleManagement />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/lookups/transporters"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <TransporterManagement />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/lookups/materials"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <MaterialManagement />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/lookups/customers"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <CustomerManagement />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/lookups/suppliers"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <SupplierManagement />
                             </Layout>
                         </ProtectedRoute>
                     }

@@ -40,6 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         Create: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>,
         Users: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
         Password: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
+        Lookups: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
         Logout: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
     };
 
@@ -177,6 +178,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 <MenuItem to="/employees" label="USERS" icon={Icons.Users} />
                                 <MenuItem to="/wlog" label="Weigh Entry" icon={Icons.Config} />
                                 <MenuItem to="/records" label="Records" icon={Icons.Config} />
+                                <MenuItem to="/lookups" label="LOOKUPS" icon={Icons.Lookups} />
                             </>
                         )}
 
@@ -185,11 +187,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 <MenuItem to="/entry" label="ENTRY" icon={Icons.Entry} />
                                 <MenuItem to="/wlog" label="Weigh Entry " icon={Icons.Config} />
                                 <MenuItem to="/records" label="Records" icon={Icons.Config} />
+                                <MenuItem to="/lookups" label="LOOKUPS" icon={Icons.Lookups} />
                             </>
                         )}
 
                         {role === 3 && ( // Admin (assuming admin is rid=3)
                             <>
+                                <MenuItem to="/lookups" label="LOOKUPS" icon={Icons.Lookups} />
                             </>
                         )}
 
@@ -199,6 +203,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 <MenuItem to="/dashboard" label="WEIGH IN" icon={Icons.WeighIn} />
                                 <MenuItem to="/wlog" label="Weigh Entry" icon={Icons.Config} />
                                 <MenuItem to="/records" label="Records" icon={Icons.Config} />
+                                <MenuItem to="/lookups" label="LOOKUPS" icon={Icons.Lookups} />
                                 <MenuItem to="/master-data" label="MASTER DATA" icon={Icons.Config} />
                             </>
                         )}
