@@ -36,7 +36,7 @@ class WlogApi {
     }
 
     // Get weight log entries with pagination and search
-    async getWlogEntries(page: number = 1, limit: number = 10, search?: string): Promise<WlogResponse> {
+    async getWlogEntries(page: number = 1, limit: number = 10, search?: string, completed?: boolean): Promise<WlogResponse> {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: limit.toString()
@@ -44,6 +44,10 @@ class WlogApi {
 
         if (search) {
             params.append('search', search);
+        }
+
+        if (completed !== undefined) {
+            params.append('completed', completed.toString());
         }
 
         const response = await fetch(`${API_BASE_URL}/wlog?${params}`, {

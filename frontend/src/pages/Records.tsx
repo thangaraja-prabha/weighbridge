@@ -3,6 +3,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { wlogApi } from '../api/wlog';
 import { masterApi } from '../api/master';
 import Pagination from '../components/Pagination';
+import Switch from 'react-switch';
 
 interface PaginationState {
     currentPage: number;
@@ -28,6 +29,7 @@ const Records: React.FC = () => {
     const [tableData, setTableData] = useState<WlogData[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showCompleted, setShowCompleted] = useState(false);
     const [pagination, setPagination] = useState<PaginationState>({
         currentPage: 1,
         totalPages: 1,
@@ -50,12 +52,12 @@ const Records: React.FC = () => {
 
     useEffect(() => {
         loadTableData();
-    }, [pagination.currentPage, pagination.limit]);
+    }, [pagination.currentPage, pagination.limit, showCompleted]);
 
     const loadTableData = async () => {
         try {
             setLoading(true);
-            const response = await wlogApi.getWlogEntries(pagination.currentPage, pagination.limit, searchQuery);
+            const response = await wlogApi.getWlogEntries(pagination.currentPage, pagination.limit, searchQuery, showCompleted);
             setTableData(response.data);
             const totalEntries = response.total || 0;
             setPagination(prev => ({
@@ -136,6 +138,19 @@ const Records: React.FC = () => {
                                     >
                                         Search
                                     </button>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="text-sm font-medium text-gray-700 mr-2">Show Completed Only</span>
+                                    <Switch
+                                        onChange={setShowCompleted}
+                                        checked={showCompleted}
+                                        onColor="#3B82F6"
+                                        uncheckedIcon={false}
+                                        checkedIcon={false}
+                                        height={24}
+                                        width={48}
+                                        handleDiameter={20}
+                                    />
                                 </div>
                             </div>
 

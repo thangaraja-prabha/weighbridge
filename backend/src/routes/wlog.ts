@@ -28,7 +28,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
         const baseCondition = eq(wlog.apikey, userApiKey);
 
         // Add search functionality - search across joined tables
-        const whereClause = search ? and(
+        let whereClause = search ? and(
             baseCondition,
             or(
                 // Search by mapped names
@@ -38,6 +38,15 @@ router.get('/', async (req: AuthRequest, res: Response) => {
                 like(tdetails.tname, `%${search}%`)
             )
         ) : baseCondition;
+
+        // Filter by completion status
+        const completed = req.query.completed === 'true';
+        if (completed) {
+            whereClause = and(
+                whereClause,
+                or(isNotNull(wlog.lwt), isNotNull(wlog.swt))
+            );
+        }
 
         // Count total records
         const countResult = await db
