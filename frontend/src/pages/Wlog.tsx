@@ -5,6 +5,7 @@ import { masterApi } from '../api/master';
 
 import Pagination from '../components/Pagination';
 import Switch from 'react-switch';
+import { useSerial } from '../context/SerialContext';
 
 type TabId = 'firstWeight' | 'secondWeight' | 'summary';
 
@@ -76,8 +77,9 @@ interface SingleWeightFormData {
 }
 
 const Wlog: React.FC = () => {
+    const { isConnected, liveWeight, settings } = useSerial();
     const [activeTab, setActiveTab] = useState<TabId>('firstWeight');
-    const [mainWeight, setMainWeight] = useState<string>('0'); // Editable main weight
+    // const [mainWeight, setMainWeight] = useState<string>('0'); // Removed in favor of liveWeight
 
     const [tableData, setTableData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -308,7 +310,7 @@ const Wlog: React.FC = () => {
 
         setFormData((prev) => ({
             ...prev,
-            firstWeight: mainWeight,
+            firstWeight: liveWeight,
             firstWeightDateTime: currentDateTime
         }));
     };
@@ -432,7 +434,7 @@ const Wlog: React.FC = () => {
 
             setEditFormData({
                 ...editFormData,
-                secondWeight: mainWeight,
+                secondWeight: liveWeight,
                 secondWeightDateTime: currentDateTime
             });
         }
@@ -581,7 +583,7 @@ const Wlog: React.FC = () => {
 
         setSingleWeightFormData((prev) => ({
             ...prev,
-            swt: mainWeight,
+            swt: liveWeight,
             swtdt: currentDateTime
         }));
     };
@@ -1553,23 +1555,13 @@ const Wlog: React.FC = () => {
                 <Toaster position="top-right" />
                 <h1 className="text-3xl font-bold text-gray-800 mb-8">Weight Log</h1>
 
-                <div className="mb-6 bg-black overflow-hidden shadow-2xl rounded-xl border border-gray-800">
+                <div className="mb-6 bg-black overflow-hidden shadow-2xl rounded-xl border border-gray-800 relative">
+                    <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? "Hardware Connected" : "Hardware Disconnected"}></div>
                     <div className="px-4 py-5 sm:p-6 text-center">
-                        <h1 className="text-lg leading-6 font-medium text-green-400 uppercase tracking-widest font-orbitron">
-                            Live Weight
-                        </h1>
-                        <div
-                            className="mt-2 text-9xl font-bold text-green-400 font-orbitron flex full-width justify-center items-center"
-                            style={{ textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00' }}
-                        >
-                            <input
-                                type="number"
-                                style={{ fontSize: '8rem' }}
-                                value={mainWeight}
-                                onChange={(e) => setMainWeight(e.target.value)}
-                                className="bg-transparent text-center focus:outline-none w-full border-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
-                            />
-                            <span className="text-4xl ml-4 text-green-300">kg</span>
+                        <h1 className="text-lg leading-6 font-medium text-green-400 uppercase tracking-widest font-orbitron">Live Weight</h1>
+                        <div className="mt-2 text-9xl font-bold text-green-400 font-orbitron" style={{ textShadow: '0 0 10px #00ff00, 0 0 20px #00ff00' }}>
+                            {liveWeight}
+                            {settings.unit !== 'off' && <span className="text-4xl ml-4 text-green-300">{settings.unit}</span>}
                         </div>
                     </div>
                 </div>

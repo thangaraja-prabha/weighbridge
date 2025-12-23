@@ -16,13 +16,20 @@ import MaterialManagement from './pages/MaterialManagement';
 import CustomerManagement from './pages/CustomerManagement';
 import SupplierManagement from './pages/SupplierManagement';
 
+import { SerialProvider } from './context/SerialContext';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const token = localStorage.getItem('token');
     if (!token) {
         return <Navigate to="/login" replace />;
     }
-    return <>{children}</>;
+    // Wrap authenticated routes in SerialProvider so connection persists across pages
+    return (
+        <SerialProvider>
+            {children}
+        </SerialProvider>
+    );
 };
 
 function App() {
@@ -44,6 +51,8 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+// ... rest of the file stays same structure, wrapping happens in ProtectedRoute
+
 
                 {/* Change Password */}
                 <Route
